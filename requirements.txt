@@ -1,3 +1,5 @@
 Flask
 Flask-PyMongo
 gunicorn
+requests
+python-dotenv
