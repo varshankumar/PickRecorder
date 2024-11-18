@@ -1,35 +1,26 @@
-name: Fetch Moneylines Daily
+name: Fetch Moneylines
 
 on:
   schedule:
-    - cron: '0 15 * * *'  # Runs daily at 15:00 UTC (3 PM UTC)
-  workflow_dispatch:    # Allows manual triggering
+    - cron: '0 15 * * *' # Runs every day at 3 PM UTC
+  workflow_dispatch: # Allows manual trigger for testing
 
 jobs:
   fetch-moneylines:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'  # Specify your Python version
+          python-version: '3.9' # Adjust the Python version if needed
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt  # Install additional dependencies if specified
+          pip install -r requirements.txt
 
-      - name: Set Environment Variables
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-        run: |
-          echo "MONGO_URI=${MONGO_URI}" >> $GITHUB_ENV
-          echo "ODDS_API_KEY=${ODDS_API_KEY}" >> $GITHUB_ENV
-
-      - name: Run Fetch Moneylines Script
+      - name: Run fetch_moneylines script
         run: python fetch_moneylines.py
