@@ -1,5 +1,5 @@
 body {
-    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
 }
 
 h1 {
@@ -7,21 +7,5 @@ h1 {
 }
 
 table {
-    margin: 0 auto;
-    border-collapse: collapse;
-    width: 90%;
-}
-
-th, td {
-    border: 1px solid #333;
-    padding: 10px;
-    text-align: center;
-}
-
-th {
-    background-color: #f2f2f2;
-}
-
-tr:nth-child(even) {
-    background-color: #f9f9f9;
+    background-color: #ffffff;
 }
