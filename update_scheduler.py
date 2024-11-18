@@ -29,7 +29,8 @@ def run_update_game_results():
         print(f"Error occurred while running update_game_results.py: {e}")
 
 def main():
-    if is_within_update_window():
+    #if is_within_update_window():
+    if True:
         print("Within update window. Proceeding to update game results...")
         run_update_game_results()
     else:
