@@ -67,6 +67,51 @@ def fetch_games(target_date, timezone="UTC", page=1, per_page=10):
     except Exception as e:
         logger.error(f"Error in fetch_games function: {e}")
         return [], 0
+
+def fetch_team_games(team, page=1, per_page=20):
+    """
+    Fetch games for a specific team from the database.
+    
+    :param team: Team name to filter games by
+    :param page: Current page number for pagination
+    :param per_page: Number of games per page
+    :return: List of games and total count of matching games
+    """
+    try:
+        query = {
+            '$or': [
+                {'teams.home.name': team},
+                {'teams.away.name': team}
+            ]
+        }
+
+        # Pagination setup
+        total_games = moneylines_collection.count_documents(query)
+        if total_games == 0:
+            return [], 0
+
+        skip = (page - 1) * per_page
+        games_cursor = moneylines_collection.find(query).skip(skip).limit(per_page)
+
+        # Process games
+        games = []
+        for game in games_cursor:
+            games.append({
+                'event_date': game.get('event_date'),
+                'home_team': game.get('teams', {}).get('home', {}).get('name', 'Unknown'),
+                'home_moneyline': game.get('teams', {}).get('home', {}).get('moneyline', 'N/A'),
+                'away_team': game.get('teams', {}).get('away', {}).get('name', 'Unknown'),
+                'away_moneyline': game.get('teams', {}).get('away', {}).get('moneyline', 'N/A'),
+                'winner': game.get('result', {}).get('winner', 'N/A'),
+                'status': game.get('status', 'In Progress'),
+            })
+
+        games = sorted(games, key=lambda x: x['event_date'])
+        return games, total_games
+    except Exception as e:
+        logger.error(f"Error in fetch_team_games function: {e}")
+        return [], 0
+
 def get_unique_teams():
     """
     Retrieves a sorted list of unique team names from the database.
@@ -140,7 +185,8 @@ def team_stats():
     page = int(request.args.get('page', 1))
     per_page = 10
     if team:
-        games, total_games = fetch_games(datetime.now(pytz.utc), team=team, page=page, per_page=per_page)
+        # Fetch games for the selected team using fetch_team_games
+        games, total_games = fetch_team_games(team=team, page=page, per_page=per_page)
         total_pages = (total_games + per_page - 1) // per_page
 
         return render_template('team_stats.html', games=games, selected_team=team,
@@ -148,6 +194,7 @@ def team_stats():
                                current_page=page, total_pages=total_pages)
 
     return render_template('team_stats.html', teams=get_unique_teams(), page_title="Team Statistics")
+
 
 
 # --------------------- Error Handling ---------------------
