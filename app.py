@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, jsonify, abort, url_for, redirect
+from flask import Flask, render_template, request, redirect, url_for
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 import pytz
@@ -11,10 +11,7 @@ app = Flask(__name__)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        logging.FileHandler("app.log"),
-        logging.StreamHandler()
-    ]
+    handlers=[logging.FileHandler("app.log"), logging.StreamHandler()]
 )
 logger = logging.getLogger(__name__)
 
@@ -34,23 +31,13 @@ except Exception as e:
     raise e
 
 # --------------------- Helper Functions ---------------------
-def fetch_games(target_date, status=None, team=None, page=1, per_page=10):
+def fetch_games(target_date, timezone="UTC", page=1, per_page=10):
     try:
-        query = {}
-        logger.info("Starting fetch_games function.")
-
-        # Apply filters
-        if team:
-            query['$or'] = [
-                {'teams.home.name': team},
-                {'teams.away.name': team}
-            ]
+        user_timezone = pytz.timezone(timezone)
         start_of_day = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
         end_of_day = start_of_day + timedelta(days=1)
-        query['event_date'] = {'$gte': start_of_day, '$lt': end_of_day}
-        if status:
-            query['status'] = status
-
+        query = {"event_date": {"$gte": start_of_day, "$lt": end_of_day}}
+        
         total_games = moneylines_collection.count_documents(query)
         if total_games == 0:
             return [], 0
@@ -60,8 +47,13 @@ def fetch_games(target_date, status=None, team=None, page=1, per_page=10):
 
         games = []
         for game in games_cursor:
+            event_date_utc = game.get('event_date')
+            if isinstance(event_date_utc, str):
+                event_date_utc = datetime.fromisoformat(event_date_utc)
+            event_date_local = event_date_utc.astimezone(user_timezone)
+
             games.append({
-                'event_date': game.get('event_date'),
+                'event_date': event_date_local,
                 'home_team': game.get('teams', {}).get('home', {}).get('name', 'Unknown'),
                 'home_moneyline': game.get('teams', {}).get('home', {}).get('moneyline', 'N/A'),
                 'away_team': game.get('teams', {}).get('away', {}).get('name', 'Unknown'),
@@ -71,27 +63,37 @@ def fetch_games(target_date, status=None, team=None, page=1, per_page=10):
             })
 
         games = sorted(games, key=lambda x: x['event_date'])
-        logger.info(f"Processed games: {games}")
         return games, total_games
     except Exception as e:
         logger.error(f"Error in fetch_games function: {e}")
         return [], 0
-
-
-
+def get_unique_teams():
+    """
+    Retrieves a sorted list of unique team names from the database.
+    :return: List of team names.
+    """
+    try:
+        home_teams = moneylines_collection.distinct('teams.home.name')
+        away_teams = moneylines_collection.distinct('teams.away.name')
+        unique_teams = sorted(set(home_teams + away_teams))
+        logger.info(f"Unique teams retrieved: {unique_teams}")
+        return unique_teams
+    except Exception as e:
+        logger.error(f"Error fetching unique teams: {e}")
+        return []
 
 # --------------------- Routes ---------------------
 @app.route('/')
 def index():
     try:
         now_utc = datetime.now(pytz.utc)
+        timezone = request.args.get('timezone', 'UTC')
         page = int(request.args.get('page', 1))
-        per_page = 10
-        games_today, total_games = fetch_games(target_date=now_utc, page=page, per_page=per_page)
-        total_pages = (total_games + per_page - 1) // per_page
+        games_today, total_games = fetch_games(target_date=now_utc, timezone=timezone, page=page, per_page=10)
+        total_pages = (total_games + 10 - 1) // 10
 
         return render_template('index.html', games=games_today, page_title="Today's Games",
-                               current_page=page, total_pages=total_pages)
+                               current_page=page, total_pages=total_pages, timezone=timezone)
     except Exception as e:
         logger.error(f"Error in index route: {e}")
         return render_template('error.html', message="An error occurred while fetching today's games.")
@@ -100,13 +102,13 @@ def index():
 def next_day():
     try:
         next_day_date = datetime.now(pytz.utc) + timedelta(days=1)
+        timezone = request.args.get('timezone', 'UTC')
         page = int(request.args.get('page', 1))
-        per_page = 10
-        games_next_day, total_games = fetch_games(target_date=next_day_date, page=page, per_page=per_page)
-        total_pages = (total_games + per_page - 1) // per_page
+        games_next_day, total_games = fetch_games(target_date=next_day_date, timezone=timezone, page=page, per_page=10)
+        total_pages = (total_games + 10 - 1) // 10
 
         return render_template('next_day.html', games=games_next_day, page_title="Next Day's Games",
-                               current_page=page, total_pages=total_pages)
+                               current_page=page, total_pages=total_pages, timezone=timezone)
     except Exception as e:
         logger.error(f"Error in next_day route: {e}")
         return render_template('error.html', message="An error occurred while fetching next day's games.")
@@ -115,13 +117,13 @@ def next_day():
 def previous_games():
     try:
         previous_day_date = datetime.now(pytz.utc) - timedelta(days=1)
+        timezone = request.args.get('timezone', 'UTC')
         page = int(request.args.get('page', 1))
-        per_page = 10
-        games_previous_day, total_games = fetch_games(target_date=previous_day_date, page=page, per_page=per_page)
-        total_pages = (total_games + per_page - 1) // per_page
+        games_previous_day, total_games = fetch_games(target_date=previous_day_date, timezone=timezone, page=page, per_page=10)
+        total_pages = (total_games + 10 - 1) // 10
 
         return render_template('previous_games.html', games=games_previous_day, page_title="Previous Day's Games",
-                               current_page=page, total_pages=total_pages)
+                               current_page=page, total_pages=total_pages, timezone=timezone)
     except Exception as e:
         logger.error(f"Error in previous_games route: {e}")
         return render_template('error.html', message="An error occurred while fetching previous day's games.")
@@ -146,6 +148,7 @@ def team_stats():
                                current_page=page, total_pages=total_pages)
 
     return render_template('team_stats.html', teams=get_unique_teams(), page_title="Team Statistics")
+
 
 # --------------------- Error Handling ---------------------
 @app.errorhandler(404)

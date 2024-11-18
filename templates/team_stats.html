@@ -1,50 +1,45 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="text-center">Team Statistics</h1>
-<form method="POST" class="mb-4">
-    <div class="input-group">
-        <select name="team" class="form-select" required>
-            <option value="" disabled selected>Select a Team</option>
-            {% for team in teams %}
-                <option value="{{ team }}" {% if team == selected_team %}selected{% endif %}>{{ team }}</option>
-            {% endfor %}
-        </select>
-        <button class="btn btn-primary" type="submit">View Stats</button>
-    </div>
-</form>
-{% if games %}
-    {% for game in games %}
-        <div class="card mt-3">
-            <div class="card-header">
-                <strong>Game Date:</strong> {{ game.event_date.strftime('%Y-%m-%d %H:%M:%S') }}
-            </div>
-            <div class="card-body">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Team</th>
-                            <th>Moneyline</th>
-                            <th>Status</th>
-                            <th>Winner</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{{ game.home_team }}</td>
-                            <td>{{ game.home_moneyline }}</td>
-                            <td rowspan="2">{{ game.status }}</td>
-                            <td rowspan="2">{{ game.winner if game.winner else 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td>{{ game.away_team }}</td>
-                            <td>{{ game.away_moneyline }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+<div class="container mt-4">
+    <h1>{{ page_title }}</h1>
+    <form method="POST" action="{{ url_for('team_stats') }}" class="my-3">
+        <div class="form-group">
+            <label for="teamSelect">Select a Team:</label>
+            <select id="teamSelect" name="team" class="form-control">
+                <option value="" disabled selected>Select a team</option>
+                {% for team in teams %}
+                    <option value="{{ team }}">{{ team }}</option>
+                {% endfor %}
+            </select>
         </div>
-    {% endfor %}
-{% else %}
-    <div class="alert alert-info text-center">No games available for this team.</div>
-{% endif %}
+        <button type="submit" class="btn btn-primary mt-2">Submit</button>
+    </form>
+
+    {% if games %}
+        <table class="table mt-4">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Home Team</th>
+                    <th>Away Team</th>
+                    <th>Status</th>
+                    <th>Winner</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for game in games %}
+                <tr>
+                    <td>{{ game.event_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ game.home_team }}</td>
+                    <td>{{ game.away_team }}</td>
+                    <td>{{ game.status }}</td>
+                    <td>{{ game.winner if game.winner else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No games available for this team.</p>
+    {% endif %}
+</div>
 {% endblock %}
