@@ -18,50 +18,82 @@
             </div>
         </div>
     </form>
-    {% if games %}
-        <div class="card mt-3">
-            <div class="card-body">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Home Team</th>
-                            <th>Home Moneyline</th>
-                            <th>Away Team</th>
-                            <th>Away Moneyline</th>
-                            <th>Status</th>
-                            <th>Winner</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for game in games %}
-                        <tr>
-                            <td>{{ game.event_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                            <td>{{ game.home_team }}</td>
-                            <td>{{ game.home_moneyline }}</td>
-                            <td>{{ game.away_team }}</td>
-                            <td>{{ game.away_moneyline }}</td>
-                            <td>{{ game.status }}</td>
-                            <td>{{ game.winner }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+
+    {% if selected_team %}
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h5 class="text-center">Underdog Win Percentage</h5>
+            <canvas id="underdogChart"></canvas>
         </div>
-        {% if total_pages > 1 %}
-        <nav aria-label="Page navigation" class="mt-3">
-            <ul class="pagination justify-content-center">
-                {% for i in range(1, total_pages + 1) %}
-                <li class="page-item {% if i == current_page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('team_stats', team=selected_team, page=i) }}">{{ i }}</a>
-                </li>
-                {% endfor %}
-            </ul>
-        </nav>
-        {% endif %}
+        <div class="col-md-6">
+            <h5 class="text-center">Favored Win Percentage</h5>
+            <canvas id="favoredChart"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if games %}
+    <div class="card mt-3">
+        <div class="card-body">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Home Team</th>
+                        <th>Home Moneyline</th>
+                        <th>Away Team</th>
+                        <th>Away Moneyline</th>
+                        <th>Status</th>
+                        <th>Winner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for game in games %}
+                    <tr>
+                        <td>{{ game.event_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ game.home_team }}</td>
+                        <td>{{ game.home_moneyline }}</td>
+                        <td>{{ game.away_team }}</td>
+                        <td>{{ game.away_moneyline }}</td>
+                        <td>{{ game.status }}</td>
+                        <td>{{ game.winner }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
     {% else %}
-        <div class="alert alert-info text-center">No games found for the selected team.</div>
+    <div class="alert alert-info text-center">No games found for the selected team.</div>
     {% endif %}
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Underdog Chart
+    const underdogCtx = document.getElementById('underdogChart').getContext('2d');
+    new Chart(underdogCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Win Percentage', 'Loss Percentage'],
+            datasets: [{
+                data: [{{ underdog_win_rate }}, {{ 100 - underdog_win_rate }}],
+                backgroundColor: ['#4caf50', '#f44336']
+            }]
+        }
+    });
+
+    // Favored Chart
+    const favoredCtx = document.getElementById('favoredChart').getContext('2d');
+    new Chart(favoredCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Win Percentage', 'Loss Percentage'],
+            datasets: [{
+                data: [{{ favored_win_rate }}, {{ 100 - favored_win_rate }}],
+                backgroundColor: ['#2196f3', '#ffeb3b']
+            }]
+        }
+    });
+</script>
 {% endblock %}

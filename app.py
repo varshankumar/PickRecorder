@@ -175,25 +175,65 @@ def previous_games():
 
 @app.route('/team_stats', methods=['GET', 'POST'])
 def team_stats():
-    if request.method == 'POST':
-        team = request.form.get('team')
-        if not team:
-            return render_template('team_stats.html', error="Please select a team.", teams=get_unique_teams())
-        return redirect(url_for('team_stats', team=team, page=1))
+    try:
+        if request.method == 'POST':
+            team = request.form.get('team')
+            if not team:
+                return render_template('team_stats.html', error="Please select a team.", teams=get_unique_teams())
+            return redirect(url_for('team_stats', team=team, page=1))
 
-    team = request.args.get('team')
-    page = int(request.args.get('page', 1))
-    per_page = 10
-    if team:
-        # Fetch games for the selected team using fetch_team_games
-        games, total_games = fetch_team_games(team=team, page=page, per_page=per_page)
+        team = request.args.get('team')
+        page = int(request.args.get('page', 1))
+        per_page = 10
+        games, total_games = fetch_team_games(team, page=page, per_page=per_page) if team else ([], 0)
+
+        # Calculate win statistics
+        total_games_played = len(games)
+        underdog_wins = 0
+        favored_wins = 0
+        total_underdog_games = 0
+        total_favored_games = 0
+
+        for game in games:
+            if game['home_team'] == team:
+                is_favored = game['home_moneyline'] < game['away_moneyline']
+                did_win = game['winner'] == team
+            else:
+                is_favored = game['away_moneyline'] < game['home_moneyline']
+                did_win = game['winner'] == team
+
+            if is_favored:
+                total_favored_games += 1
+                if did_win:
+                    favored_wins += 1
+            else:
+                total_underdog_games += 1
+                if did_win:
+                    underdog_wins += 1
+
+        # Calculate percentages
+        underdog_win_rate = (underdog_wins / total_underdog_games) * 100 if total_underdog_games > 0 else 0
+        favored_win_rate = (favored_wins / total_favored_games) * 100 if total_favored_games > 0 else 0
+
         total_pages = (total_games + per_page - 1) // per_page
 
-        return render_template('team_stats.html', games=games, selected_team=team,
-                               teams=get_unique_teams(), page_title=f"Stats for {team}",
-                               current_page=page, total_pages=total_pages)
+        return render_template(
+            'team_stats.html',
+            games=games,
+            selected_team=team,
+            teams=get_unique_teams(),
+            page_title=f"Stats for {team}" if team else "Team Statistics",
+            current_page=page,
+            total_pages=total_pages,
+            underdog_win_rate=underdog_win_rate,
+            favored_win_rate=favored_win_rate,
+            total_underdog_games=total_underdog_games,
+            total_favored_games=total_favored_games,
+        )
+    except Exception as e:
+        logger.error(f"Error in team_stats route: {e}")
+        return render_template('error.html', message="An error occurred while fetching team stats.")
 
-    return render_template('team_stats.html', teams=get_unique_teams(), page_title="Team Statistics")
 
 
 
