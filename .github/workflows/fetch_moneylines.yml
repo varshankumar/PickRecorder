@@ -1,12 +1,12 @@
-name: Fetch Projections Hourly
+name: Fetch Moneylines Daily
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Runs at the top of every hour
+    - cron: '0 0 * * *'  # Runs every day at 00:00 UTC
   workflow_dispatch:    # Allows manual triggering
 
 jobs:
-  fetch_projections:
+  fetch_moneylines:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,12 +21,15 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install requests pymongo python-dotenv
 
       - name: Set Environment Variables
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
-        run: echo "MONGO_URI=${MONGO_URI}" >> $GITHUB_ENV
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          echo "MONGO_URI=${MONGO_URI}" >> $GITHUB_ENV
+          echo "ODDS_API_KEY=${ODDS_API_KEY}" >> $GITHUB_ENV
 
-      - name: Run Fetch Projections Script
-        run: python fetch_projections.py
+      - name: Run Fetch Moneylines Script
+        run: python fetch_moneylines.py

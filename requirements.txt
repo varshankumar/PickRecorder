@@ -1,5 +1,3 @@
-Flask
-Flask-PyMongo
-gunicorn
 requests
+pymongo
 python-dotenv
