@@ -30,4 +30,4 @@ jobs:
       - name: Run update script
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }} # Add your MongoDB URI to GitHub Secrets
-        run: python update_results.py
+        run: python update_game_results.py
