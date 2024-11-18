@@ -1,41 +1,30 @@
-name: Update Game Results
+name: Update Game Results Scheduler
 
 on:
   schedule:
-    # Run every 3 hours (UTC)
-    - cron: "0 */3 * * *"
-  workflow_dispatch:
+    - cron: "0 */3 * * *"  # Runs every 3 hours
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
-  update-results:
+  update_game_results_scheduler:
     runs-on: ubuntu-latest
+
     steps:
-      # Checkout your repository
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Set up Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: "3.9"
 
-      # Install dependencies
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Set Environment Variables
+      - name: Run Update Scheduler Script
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-        run: |
-          echo "MONGO_URI=${MONGO_URI}" >> $GITHUB_ENV
-          echo "ODDS_API_KEY=${ODDS_API_KEY}" >> $GITHUB_ENV
-      # Run the update script
-      - name: Run update script
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-        run: python update_game_results.py
+        run: python update_scheduler.py
