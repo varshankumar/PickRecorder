@@ -1,6 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="text-center">Next Day's Games</h1>
+<h1 class="text-center">Team Statistics</h1>
+<form method="POST" class="mb-4">
+    <div class="input-group">
+        <select name="team" class="form-select" required>
+            <option value="" disabled selected>Select a Team</option>
+            {% for team in teams %}
+                <option value="{{ team }}" {% if team == selected_team %}selected{% endif %}>{{ team }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-primary" type="submit">View Stats</button>
+    </div>
+</form>
 {% if games %}
     {% for game in games %}
         <div class="card mt-3">
@@ -33,16 +44,7 @@
             </div>
         </div>
     {% endfor %}
-    <nav aria-label="Page navigation" class="mt-4">
-        <ul class="pagination justify-content-center">
-            {% for page_num in range(1, total_pages + 1) %}
-                <li class="page-item {% if page_num == current_page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('next_day', page=page_num) }}">{{ page_num }}</a>
-                </li>
-            {% endfor %}
-        </ul>
-    </nav>
 {% else %}
-    <div class="alert alert-info text-center">No games available for the next day.</div>
+    <div class="alert alert-info text-center">No games available for this team.</div>
 {% endif %}
 {% endblock %}

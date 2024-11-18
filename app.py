@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, url_for
+from flask import Flask, render_template, request, jsonify, abort, url_for, redirect
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 import pytz
@@ -8,141 +8,154 @@ import logging
 app = Flask(__name__)
 
 # --------------------- Logging Configuration ---------------------
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler("app.log"),
+        logging.StreamHandler()
+    ]
+)
 logger = logging.getLogger(__name__)
 
 # --------------------- MongoDB Configuration ---------------------
-# Retrieve MongoDB URI from environment variables
 MONGO_URI = os.getenv('MONGO_URI')
 if not MONGO_URI:
     logger.error("MONGO_URI not found in environment variables.")
     raise EnvironmentError("MONGO_URI not found in environment variables.")
 
-# Initialize MongoDB client
 try:
     client = MongoClient(MONGO_URI)
-    db = client.sports_odds  # Replace with your actual database name
-    moneylines_collection = db.moneylines  # Replace with your actual collection name
+    db = client.sports_odds
+    moneylines_collection = db.moneylines
     logger.info("Connected to MongoDB successfully.")
 except Exception as e:
     logger.error(f"Failed to connect to MongoDB: {e}")
     raise e
 
-# --------------------- Helper Function ---------------------
-def fetch_games(target_date):
-    """
-    Fetches games for a given date from MongoDB.
-    :param target_date: datetime object representing the target date in UTC.
-    :return: List of game dictionaries.
-    """
+# --------------------- Helper Functions ---------------------
+def fetch_games(target_date, status=None, team=None, page=1, per_page=10):
     try:
+        query = {}
+        logger.info("Starting fetch_games function.")
+
+        # Apply filters
+        if team:
+            query['$or'] = [
+                {'teams.home.name': team},
+                {'teams.away.name': team}
+            ]
         start_of_day = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
         end_of_day = start_of_day + timedelta(days=1)
-        logger.info(f"Fetching games from {start_of_day} to {end_of_day} UTC.")
+        query['event_date'] = {'$gte': start_of_day, '$lt': end_of_day}
+        if status:
+            query['status'] = status
 
-        # Query for games happening on target_date
-        games_today_cursor = moneylines_collection.find({
-            'event_date': {
-                '$gte': start_of_day,
-                '$lt': end_of_day
-            }
-        })
+        total_games = moneylines_collection.count_documents(query)
+        if total_games == 0:
+            return [], 0
 
-        games_today = list(games_today_cursor)
-        total_fetched = len(games_today)
-        logger.info(f"Total games fetched from DB: {total_fetched}")
-
-        if total_fetched == 0:
-            logger.warning("No games found for the specified date in the database.")
-            return []
+        skip = (page - 1) * per_page
+        games_cursor = moneylines_collection.find(query).skip(skip).limit(per_page)
 
         games = []
-        processed_count = 0  # Counter for debugging
-
-        for game in games_today:
-            processed_count += 1
-            home_team = game['teams']['home']['name']
-            home_moneyline = game['teams']['home']['moneyline']
-            away_team = game['teams']['away']['name']
-            away_moneyline = game['teams']['away']['moneyline']
-            winner = game['result'].get('winner')  # Use .get() to handle cases where 'winner' might not exist
-
-            logger.info(f"Processing game {processed_count}: {home_team} vs {away_team} at {game['event_date']}")
-
-            # Convert event_date to local timezone
-            event_date_local = game['event_date'].astimezone(pytz.timezone('UTC'))  # Modify timezone if needed
-
-            # Determine game status
-            if winner:
-                status = 'Completed'
-            else:
-                status = 'Upcoming'
-
+        for game in games_cursor:
             games.append({
-                'sport': game['sport'],
-                'league': game['league'],
-                'event_date': event_date_local,
-                'home_team': home_team,
-                'home_moneyline': home_moneyline,
-                'away_team': away_team,
-                'away_moneyline': away_moneyline,
-                'winner': winner if winner else 'N/A',
-                'status': status
+                'event_date': game.get('event_date'),
+                'home_team': game.get('teams', {}).get('home', {}).get('name', 'Unknown'),
+                'home_moneyline': game.get('teams', {}).get('home', {}).get('moneyline', 'N/A'),
+                'away_team': game.get('teams', {}).get('away', {}).get('name', 'Unknown'),
+                'away_moneyline': game.get('teams', {}).get('away', {}).get('moneyline', 'N/A'),
+                'winner': game.get('result', {}).get('winner', 'N/A'),
+                'status': game.get('status', 'In Progress')
             })
 
-        logger.info(f"Total games to display: {len(games)}")
-        # Sort the list by event_date ascending (earliest first)
         games = sorted(games, key=lambda x: x['event_date'])
-
-        return games
+        logger.info(f"Processed games: {games}")
+        return games, total_games
     except Exception as e:
-        logger.error(f"Error fetching games: {e}")
-        return []
+        logger.error(f"Error in fetch_games function: {e}")
+        return [], 0
 
-# --------------------- Flask Routes ---------------------
+
+
+
+# --------------------- Routes ---------------------
 @app.route('/')
 def index():
-    """
-    Fetches today's games from MongoDB and renders them to the index.html template.
-    """
     try:
-        # Define the timezone (modify as needed)
-        local_tz = pytz.timezone('UTC')  # Change 'UTC' to your desired timezone, e.g., 'America/New_York'
-
-        # Get current date in UTC
         now_utc = datetime.now(pytz.utc)
-        games_today = fetch_games(now_utc)
+        page = int(request.args.get('page', 1))
+        per_page = 10
+        games_today, total_games = fetch_games(target_date=now_utc, page=page, per_page=per_page)
+        total_pages = (total_games + per_page - 1) // per_page
 
-        return render_template('index.html', games=games_today, page_title="Today's Games")
+        return render_template('index.html', games=games_today, page_title="Today's Games",
+                               current_page=page, total_pages=total_pages)
     except Exception as e:
         logger.error(f"Error in index route: {e}")
         return render_template('error.html', message="An error occurred while fetching today's games.")
 
 @app.route('/next_day')
 def next_day():
-    """
-    Fetches next day's games from MongoDB and renders them to the next_day.html template.
-    """
     try:
-        # Define the timezone (modify as needed)
-        local_tz = pytz.timezone('UTC')  # Change 'UTC' to your desired timezone, e.g., 'America/New_York'
+        next_day_date = datetime.now(pytz.utc) + timedelta(days=1)
+        page = int(request.args.get('page', 1))
+        per_page = 10
+        games_next_day, total_games = fetch_games(target_date=next_day_date, page=page, per_page=per_page)
+        total_pages = (total_games + per_page - 1) // per_page
 
-        # Calculate next day's date in UTC
-        now_utc = datetime.now(pytz.utc)
-        next_day_date = now_utc + timedelta(days=1)
-        games_next_day = fetch_games(next_day_date)
-
-        return render_template('next_day.html', games=games_next_day, page_title="Next Day's Games")
+        return render_template('next_day.html', games=games_next_day, page_title="Next Day's Games",
+                               current_page=page, total_pages=total_pages)
     except Exception as e:
         logger.error(f"Error in next_day route: {e}")
         return render_template('error.html', message="An error occurred while fetching next day's games.")
 
-# --------------------- Run the Flask App ---------------------
-if __name__ == '__main__':
+@app.route('/previous_games')
+def previous_games():
     try:
-        # Retrieve the port number from environment variables (set by Render)
-        port = int(os.environ.get('PORT', 5000))
-        # Run the Flask app on all available IPs (0.0.0.0) and the specified port
-        app.run(host='0.0.0.0', port=port, debug=False)
+        previous_day_date = datetime.now(pytz.utc) - timedelta(days=1)
+        page = int(request.args.get('page', 1))
+        per_page = 10
+        games_previous_day, total_games = fetch_games(target_date=previous_day_date, page=page, per_page=per_page)
+        total_pages = (total_games + per_page - 1) // per_page
+
+        return render_template('previous_games.html', games=games_previous_day, page_title="Previous Day's Games",
+                               current_page=page, total_pages=total_pages)
     except Exception as e:
-        logger.error(f"Failed to run the Flask app: {e}")
+        logger.error(f"Error in previous_games route: {e}")
+        return render_template('error.html', message="An error occurred while fetching previous day's games.")
+
+@app.route('/team_stats', methods=['GET', 'POST'])
+def team_stats():
+    if request.method == 'POST':
+        team = request.form.get('team')
+        if not team:
+            return render_template('team_stats.html', error="Please select a team.", teams=get_unique_teams())
+        return redirect(url_for('team_stats', team=team, page=1))
+
+    team = request.args.get('team')
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    if team:
+        games, total_games = fetch_games(datetime.now(pytz.utc), team=team, page=page, per_page=per_page)
+        total_pages = (total_games + per_page - 1) // per_page
+
+        return render_template('team_stats.html', games=games, selected_team=team,
+                               teams=get_unique_teams(), page_title=f"Stats for {team}",
+                               current_page=page, total_pages=total_pages)
+
+    return render_template('team_stats.html', teams=get_unique_teams(), page_title="Team Statistics")
+
+# --------------------- Error Handling ---------------------
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html', message="Page not found."), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('500.html', message="Internal server error."), 500
+
+# --------------------- Run the App ---------------------
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), debug=False)
