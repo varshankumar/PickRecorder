@@ -1,11 +1,23 @@
 body {
-    background-color: #f8f9fa;
+    background-color: #f8f9fa; /* Light gray background */
 }
 
 h1 {
-    text-align: center;
+    color: #343a40; /* Dark gray color for the header */
 }
 
-table {
-    background-color: #ffffff;
+.table-success {
+    background-color: #d4edda !important; /* Light green background for completed games */
+}
+
+.table-info {
+    background-color: #d1ecf1 !important; /* Light blue background for upcoming games */
+}
+
+.badge-success {
+    background-color: #28a745;
+}
+
+.badge-info {
+    background-color: #17a2b8;
 }

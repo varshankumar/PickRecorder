@@ -1,0 +1,28 @@
+2024-11-17 17:41:16,798 [INFO] Successfully connected to MongoDB.
+2024-11-17 17:41:17,128 [INFO] Fetched 24 games for sport: basketball_nba
+2024-11-17 17:41:17,129 [INFO] Game not completed or winner not determined: Portland Trail Blazers vs Atlanta Hawks
+2024-11-17 17:41:17,129 [INFO] Game not completed or winner not determined: Chicago Bulls vs Houston Rockets
+2024-11-17 17:41:17,130 [INFO] Game not completed or winner not determined: Oklahoma City Thunder vs Dallas Mavericks
+2024-11-17 17:41:17,130 [INFO] Game not completed or winner not determined: New York Knicks vs Brooklyn Nets
+2024-11-17 17:41:17,132 [INFO] Game not completed or winner not determined: Los Angeles Clippers vs Utah Jazz
+2024-11-17 17:41:17,132 [INFO] Game not completed or winner not determined: Detroit Pistons vs Chicago Bulls
+2024-11-17 17:41:17,133 [INFO] Game not completed or winner not determined: Toronto Raptors vs Indiana Pacers
+2024-11-17 17:41:17,133 [INFO] Game not completed or winner not determined: Miami Heat vs Philadelphia 76ers
+2024-11-17 17:41:17,133 [INFO] Game not completed or winner not determined: New York Knicks vs Washington Wizards
+2024-11-17 17:41:17,134 [INFO] Game not completed or winner not determined: Milwaukee Bucks vs Houston Rockets
+2024-11-17 17:41:17,134 [INFO] Game not completed or winner not determined: Phoenix Suns vs Orlando Magic
+2024-11-17 17:41:17,135 [INFO] Game not completed or winner not determined: Sacramento Kings vs Atlanta Hawks
+2024-11-17 17:41:17,135 [INFO] Game not completed or winner not determined: Los Angeles Clippers vs Golden State Warriors
+2024-11-17 17:41:17,135 [INFO] Game not completed or winner not determined: Boston Celtics vs Cleveland Cavaliers
+2024-11-17 17:41:17,136 [INFO] Game not completed or winner not determined: Brooklyn Nets vs Charlotte Hornets
+2024-11-17 17:41:17,136 [INFO] Game not completed or winner not determined: Memphis Grizzlies vs Denver Nuggets
+2024-11-17 17:41:17,136 [INFO] Game not completed or winner not determined: Dallas Mavericks vs New Orleans Pelicans
+2024-11-17 17:41:17,136 [INFO] Game not completed or winner not determined: San Antonio Spurs vs Oklahoma City Thunder
+2024-11-17 17:41:17,136 [INFO] Game not completed or winner not determined: Los Angeles Lakers vs Utah Jazz
+2024-11-17 17:41:17,138 [INFO] Game not completed or winner not determined: New York Knicks vs San Antonio Spurs
+2024-11-17 17:41:17,138 [INFO] Game not completed or winner not determined: Dallas Mavericks vs Minnesota Timberwolves
+2024-11-17 17:41:17,138 [INFO] Game not completed or winner not determined: Boston Celtics vs Philadelphia 76ers
+2024-11-17 17:41:17,138 [INFO] Game not completed or winner not determined: Golden State Warriors vs Los Angeles Lakers
+2024-11-17 17:41:17,139 [INFO] Game not completed or winner not determined: Phoenix Suns vs Denver Nuggets
+2024-11-17 17:41:17,428 [ERROR] HTTP error occurred while fetching american_football_nfl: 404 Client Error: Not Found for url: https://api.the-odds-api.com/v4/sports/american_football_nfl/scores?apiKey=be8a5c70561fa25ffe2403ad8ebcdf32&regions=us&markets=h2h&oddsFormat=american&dateFormat=iso
+2024-11-17 17:41:17,429 [INFO] Game results update script completed.
