@@ -152,11 +152,11 @@ def next_day():
         games_next_day, total_games = fetch_games(target_date=next_day_date, timezone=timezone, page=page, per_page=10)
         total_pages = (total_games + 10 - 1) // 10
 
-        return render_template('next_day.html', games=games_next_day, page_title="Next Day's Games",
+        return render_template('next_day.html', games=games_next_day, page_title="Upcoming Games",
                                current_page=page, total_pages=total_pages, timezone=timezone)
     except Exception as e:
         logger.error(f"Error in next_day route: {e}")
-        return render_template('error.html', message="An error occurred while fetching next day's games.")
+        return render_template('error.html', message="An error occurred while fetching upcoming games.")
 
 @app.route('/previous_games')
 def previous_games():
@@ -167,11 +167,11 @@ def previous_games():
         games_previous_day, total_games = fetch_games(target_date=previous_day_date, timezone=timezone, page=page, per_page=10)
         total_pages = (total_games + 10 - 1) // 10
 
-        return render_template('previous_games.html', games=games_previous_day, page_title="Previous Day's Games",
+        return render_template('previous_games.html', games=games_previous_day, page_title="Past Games",
                                current_page=page, total_pages=total_pages, timezone=timezone)
     except Exception as e:
         logger.error(f"Error in previous_games route: {e}")
-        return render_template('error.html', message="An error occurred while fetching previous day's games.")
+        return render_template('error.html', message="An error occurred while fetching past games.")
 
 @app.route('/team_stats', methods=['GET', 'POST'])
 def team_stats():
