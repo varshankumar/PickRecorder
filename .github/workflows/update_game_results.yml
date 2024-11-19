@@ -1,4 +1,4 @@
-name: Fetch Moneylines Daily
+name: Update Game Results
 
 on:
   workflow_dispatch:  # Allows manual triggering
