@@ -1,12 +1,10 @@
-name: Update Game Results Scheduler
+name: Fetch Moneylines Daily
 
 on:
-  schedule:
-    - cron: "0 */3 * * *"  # Runs every 3 hours
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
-  update_game_results_scheduler:
+  fetch_moneylines:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,15 +14,23 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: '3.12'
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Update Scheduler Script
+      - name: Set Environment Variables
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-        run: python update_scheduler.py
+        run: |
+          echo "MONGO_URI=${MONGO_URI}" >> $GITHUB_ENV
+          echo "ODDS_API_KEY=${ODDS_API_KEY}" >> $GITHUB_ENV
+
+      - name: Run Fetch Moneylines Script
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: python update_game_results.py
