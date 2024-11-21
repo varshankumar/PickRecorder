@@ -5,3 +5,4 @@ gunicorn
 pytz
 requests
 google-generativeai
+flask-login

@@ -8,8 +8,20 @@ import json  # Add this import
 from mongo_query_generator import MongoQueryGenerator
 import os
 import google.generativeai as genai
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from models import User
 
 app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')  # Add this line for session management
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(username):
+    return User.get(username)
 
 # --------------------- Logging Configuration ---------------------
 logging.basicConfig(
@@ -135,6 +147,7 @@ def get_unique_teams():
 
 # --------------------- Routes ---------------------
 @app.route('/')
+@login_required
 def index():
     try:
         now_utc = datetime.now(pytz.utc)
@@ -150,6 +163,7 @@ def index():
         return render_template('error.html', message="An error occurred while fetching today's games.")
 
 @app.route('/next_day')
+@login_required
 def next_day():
     try:
         next_day_date = datetime.now(pytz.utc) + timedelta(days=1)
@@ -165,6 +179,7 @@ def next_day():
         return render_template('error.html', message="An error occurred while fetching upcoming games.")
 
 @app.route('/previous_games')
+@login_required
 def previous_games():
     try:
         previous_day_date = datetime.now(pytz.utc) - timedelta(days=1)
@@ -180,6 +195,7 @@ def previous_games():
         return render_template('error.html', message="An error occurred while fetching past games.")
 
 @app.route('/team_stats', methods=['GET', 'POST'])
+@login_required
 def team_stats():
     try:
         if request.method == 'POST':
@@ -241,6 +257,7 @@ def team_stats():
         return render_template('error.html', message="An error occurred while fetching team stats.")
 
 @app.route('/search', methods=['GET', 'POST'])
+@login_required
 def search():
     try:
         if request.method == 'POST':
@@ -264,6 +281,47 @@ def search():
     except Exception as e:
         logger.error(f"Error in search route: {e}")
         return render_template('error.html', message="An error occurred during search.")
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        user = User.get(username)
+        
+        if user and user.check_password(password):
+            login_user(user)
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('index'))
+        
+        return render_template('login.html', error="Invalid username or password")
+    
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        if User.get(username):
+            return render_template('register.html', error="Username already exists")
+        
+        user = User(username=username, email=email)
+        user.set_password(password)
+        user.save()
+        
+        login_user(user)
+        return redirect(url_for('index'))
+    
+    return render_template('register.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 # --------------------- Error Handling ---------------------
 @app.errorhandler(404)
