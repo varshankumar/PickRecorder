@@ -4,3 +4,4 @@ python-dotenv
 gunicorn
 pytz
 requests
+google-generativeai

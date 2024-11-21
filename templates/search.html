@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Search Games{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Search Games</h1>
+    
+    <form method="POST" class="mb-4">
+        <div class="form-group">
+            <label for="query">Enter your search in plain English:</label>
+            <input type="text" class="form-control" id="query" name="query" 
+                   placeholder="e.g., Show me games where the home team was favored and lost"
+                   value="{{ query if query }}" required>
+        </div>
+        <button type="submit" class="btn btn-primary mt-2">Search</button>
+    </form>
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    {% if results %}
+    <div class="mb-3">
+        <h3>Search Results</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Home Team</th>
+                        <th>Away Team</th>
+                        <th>Home ML</th>
+                        <th>Away ML</th>
+                        <th>Winner</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for game in results %}
+                    <tr>
+                        <td>{{ game.event_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ game.teams.home.name }}</td>
+                        <td>{{ game.teams.away.name }}</td>
+                        <td>{{ game.teams.home.moneyline }}</td>
+                        <td>{{ game.teams.away.moneyline }}</td>
+                        <td>{{ game.result.winner if game.result and game.result.winner else 'N/A' }}</td>
+                        <td>{{ game.status }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    {% if mongo_query %}
+    <div class="card mt-4">
+        <div class="card-header">Generated MongoDB Query</div>
+        <div class="card-body">
+            <pre><code>{{ mongo_query }}</code></pre>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

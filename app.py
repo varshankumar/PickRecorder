@@ -4,6 +4,10 @@ from pymongo import MongoClient
 from datetime import datetime, timedelta
 import pytz
 import logging
+import json  # Add this import
+from mongo_query_generator import MongoQueryGenerator
+import os
+import google.generativeai as genai
 
 app = Flask(__name__)
 
@@ -29,6 +33,8 @@ try:
 except Exception as e:
     logger.error(f"Failed to connect to MongoDB: {e}")
     raise e
+
+query_generator = MongoQueryGenerator(os.getenv('GEMINI_KEY'))
 
 # --------------------- Helper Functions ---------------------
 def fetch_games(target_date, timezone="UTC", page=1, per_page=10):
@@ -234,8 +240,30 @@ def team_stats():
         logger.error(f"Error in team_stats route: {e}")
         return render_template('error.html', message="An error occurred while fetching team stats.")
 
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    try:
+        if request.method == 'POST':
+            natural_query = request.form.get('query')
+            if not natural_query:
+                return render_template('search.html', error="Please enter a query")
 
+            # Generate MongoDB query from natural language
+            mongo_query = query_generator.generate_query(natural_query)
+            mongo_query = query_generator.process_date_filters(mongo_query)
 
+            # Execute the query
+            results = list(moneylines_collection.find(mongo_query).limit(20))
+
+            return render_template('search.html', 
+                                results=results, 
+                                query=natural_query, 
+                                mongo_query=json.dumps(mongo_query, indent=2))
+
+        return render_template('search.html')
+    except Exception as e:
+        logger.error(f"Error in search route: {e}")
+        return render_template('error.html', message="An error occurred during search.")
 
 # --------------------- Error Handling ---------------------
 @app.errorhandler(404)
