@@ -12,7 +12,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from models import User
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')  # Add this line for session management
+app.secret_key = os.getenv('SECRET_KEY')
 
 # Initialize Flask-Login
 login_manager = LoginManager()
