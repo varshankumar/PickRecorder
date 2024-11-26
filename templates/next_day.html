@@ -5,18 +5,17 @@
     <h1 class="display-4">{{ page_title }}</h1>
 </div>
 
-<form method="get" class="mb-4 text-center">
+<div class="mb-4 text-center">
     <div class="btn-group" role="group">
-        <input type="checkbox" class="btn-check" id="nba" name="sports" value="NBA" 
+        <input type="checkbox" class="btn-check sport-filter" id="nba" name="sports" value="NBA" 
                {% if 'NBA' in selected_sports %}checked{% endif %} autocomplete="off">
         <label class="btn btn-outline-primary" for="nba">NBA</label>
 
-        <input type="checkbox" class="btn-check" id="nfl" name="sports" value="NFL" 
+        <input type="checkbox" class="btn-check sport-filter" id="nfl" name="sports" value="NFL" 
                {% if 'NFL' in selected_sports %}checked{% endif %} autocomplete="off">
         <label class="btn btn-outline-primary" for="nfl">NFL</label>
     </div>
-    <button type="submit" class="btn btn-primary ms-2">Filter</button>
-</form>
+</div>
 
 {% for game in games %}
 <div class="card mb-3">
@@ -50,4 +49,34 @@
 {% endfor %}
 
 {% include 'pagination.html' %}
+
+<script>
+    document.querySelectorAll('.sport-filter').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const selectedSports = Array.from(document.querySelectorAll('.sport-filter:checked'))
+                .map(cb => cb.value);
+            
+            // Ensure at least one sport is selected
+            if (selectedSports.length === 0) {
+                checkbox.checked = true;
+                return;
+            }
+            
+            // Build URL with selected sports
+            const url = new URL(window.location.href);
+            url.searchParams.delete('sports');
+            selectedSports.forEach(sport => {
+                url.searchParams.append('sports', sport);
+            });
+            
+            // Preserve page parameter if it exists
+            const page = new URLSearchParams(window.location.search).get('page');
+            if (page) {
+                url.searchParams.set('page', page);
+            }
+            
+            window.location.href = url.toString();
+        });
+    });
+</script>
 {% endblock %}

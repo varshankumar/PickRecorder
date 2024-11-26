@@ -33,19 +33,28 @@
                         <tr>
                             <th>Team</th>
                             <th>Moneyline</th>
+                            {% if game.status == 'Completed' %}
+                            <th>Score</th>
+                            {% endif %}
                             <th>Result</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.away_team %}table-success{% else %}table-danger{% endif %}{% endif %}">
+                        <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.away_team %}table-success{% elif game.winner != 'N/A' %}table-danger{% endif %}{% endif %}">
                             <td>{{ game.away_team }}</td>
                             <td>{{ game.away_moneyline }}</td>
-                            <td>{% if game.status == 'Completed' %}{% if game.winner == game.away_team %}Win{% else %}Loss{% endif %}{% endif %}</td>
+                            {% if game.status == 'Completed' %}
+                            <td>{{ game.result.away_score }}</td>
+                            {% endif %}
+                            <td>{% if game.status == 'Completed' %}{% if game.winner == game.away_team %}Win{% elif game.winner != 'N/A' %}Loss{% endif %}{% endif %}</td>
                         </tr>
-                        <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.home_team %}table-success{% else %}table-danger{% endif %}{% endif %}">
+                        <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.home_team %}table-success{% elif game.winner != 'N/A' %}table-danger{% endif %}{% endif %}">
                             <td>{{ game.home_team }}</td>
                             <td>{{ game.home_moneyline }}</td>
-                            <td>{% if game.status == 'Completed' %}{% if game.winner == game.home_team %}Win{% else %}Loss{% endif %}{% endif %}</td>
+                            {% if game.status == 'Completed' %}
+                            <td>{{ game.result.home_score }}</td>
+                            {% endif %}
+                            <td>{% if game.status == 'Completed' %}{% if game.winner == game.home_team %}Win{% elif game.winner != 'N/A' %}Loss{% endif %}{% endif %}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -88,4 +97,4 @@
         });
     });
 </script>
-{% endblock %}
+{% endblock %} 

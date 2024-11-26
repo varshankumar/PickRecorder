@@ -117,7 +117,11 @@ def fetch_games(target_date, timezone=None, page=1, per_page=10, sports=None):
                 'away_team': game.get('teams', {}).get('away', {}).get('name', 'Unknown'),
                 'away_moneyline': game.get('teams', {}).get('away', {}).get('moneyline', 'N/A'),
                 'winner': game.get('result', {}).get('winner', 'N/A'),
-                'status': game.get('status', 'In Progress')
+                'status': game.get('status', 'In Progress'),
+                'result': {  # Add scores to the game data
+                    'home_score': game.get('result', {}).get('home_score', 'N/A'),
+                    'away_score': game.get('result', {}).get('away_score', 'N/A')
+                }
             })
 
         games = sorted(games, key=lambda x: x['event_date'])
