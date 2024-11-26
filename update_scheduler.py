@@ -4,18 +4,20 @@ from datetime import datetime, timedelta
 import pytz
 
 # Constants for update scheduling
-FIRST_GAME_TIME = datetime.utcnow().replace(hour=15, minute=0, second=0, microsecond=0)  # Example: 3 PM UTC
-UPDATE_INTERVAL_HOURS = 3
-END_OF_DAY_UTC = datetime.utcnow().replace(hour=23, minute=59, second=59, microsecond=0)
+PST_TZ = pytz.timezone('America/Los_Angeles')
+START_TIME = datetime.now(PST_TZ).replace(hour=13, minute=0, second=0, microsecond=0)  # 1 PM PST
+END_TIME = datetime.now(PST_TZ).replace(hour=22, minute=0, second=0, microsecond=0)    # 10 PM PST
+UPDATE_INTERVAL_HOURS = 1
 
 def is_within_update_window():
     """
-    Determines if the current time is within the valid update window.
-    The window starts 3 hours after the first game of the day and ends at midnight UTC.
+    Determines if the current time is within the valid update window (1 PM - 10 PM PST).
     """
-    now = datetime.utcnow()
-    start_time = FIRST_GAME_TIME + timedelta(hours=3)
-    return start_time <= now <= END_OF_DAY_UTC
+    now = datetime.now(PST_TZ)
+    current_date = now.date()
+    start_time = START_TIME.replace(year=current_date.year, month=current_date.month, day=current_date.day)
+    end_time = END_TIME.replace(year=current_date.year, month=current_date.month, day=current_date.day)
+    return start_time <= now <= end_time
 
 def run_update_game_results():
     """

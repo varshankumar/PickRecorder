@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 import pytz
@@ -49,12 +49,24 @@ except Exception as e:
 query_generator = MongoQueryGenerator(os.getenv('GEMINI_KEY'))
 
 # --------------------- Helper Functions ---------------------
-def fetch_games(target_date, timezone="UTC", page=1, per_page=10):
+def fetch_games(target_date, timezone=None, page=1, per_page=10):
     try:
+        # Use session timezone if none provided
+        timezone = timezone or session.get('timezone', 'UTC')
         user_timezone = pytz.timezone(timezone)
-        start_of_day = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # Convert target_date to UTC for MongoDB query
+        if target_date.tzinfo is None:
+            target_date = pytz.utc.localize(target_date)
+        
+        start_of_day = target_date.astimezone(user_timezone).replace(hour=0, minute=0, second=0, microsecond=0)
         end_of_day = start_of_day + timedelta(days=1)
-        query = {"event_date": {"$gte": start_of_day, "$lt": end_of_day}}
+        
+        # Convert back to UTC for MongoDB query
+        start_of_day_utc = start_of_day.astimezone(pytz.UTC)
+        end_of_day_utc = end_of_day.astimezone(pytz.UTC)
+        
+        query = {"event_date": {"$gte": start_of_day_utc, "$lt": end_of_day_utc}}
         
         total_games = moneylines_collection.count_documents(query)
         if total_games == 0:
@@ -151,7 +163,7 @@ def get_unique_teams():
 def index():
     try:
         now_utc = datetime.now(pytz.utc)
-        timezone = request.args.get('timezone', 'UTC')
+        timezone = session.get('timezone', 'UTC')
         page = int(request.args.get('page', 1))
         games_today, total_games = fetch_games(target_date=now_utc, timezone=timezone, page=page, per_page=10)
         total_pages = (total_games + 10 - 1) // 10
@@ -322,6 +334,13 @@ def register():
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+@app.route('/set_timezone', methods=['POST'])
+def set_timezone():
+    data = request.get_json()
+    timezone = data.get('timezone', 'UTC')
+    session['timezone'] = timezone
+    return jsonify({'status': 'success'})
 
 # --------------------- Error Handling ---------------------
 @app.errorhandler(404)
