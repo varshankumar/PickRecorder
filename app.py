@@ -51,18 +51,20 @@ query_generator = MongoQueryGenerator(os.getenv('GEMINI_KEY'))
 # --------------------- Helper Functions ---------------------
 def fetch_games(target_date, timezone=None, page=1, per_page=10):
     try:
-        # Use session timezone if none provided
         timezone = timezone or session.get('timezone', 'UTC')
         user_timezone = pytz.timezone(timezone)
         
-        # Convert target_date to UTC for MongoDB query
+        # Make sure target_date is timezone aware in user's timezone
         if target_date.tzinfo is None:
-            target_date = pytz.utc.localize(target_date)
+            target_date = user_timezone.localize(target_date)
+        else:
+            target_date = target_date.astimezone(user_timezone)
         
-        start_of_day = target_date.astimezone(user_timezone).replace(hour=0, minute=0, second=0, microsecond=0)
-        end_of_day = start_of_day + timedelta(days=1)
+        # Get start and end of day in user's timezone
+        start_of_day = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
         
-        # Convert back to UTC for MongoDB query
+        # Convert to UTC for MongoDB query
         start_of_day_utc = start_of_day.astimezone(pytz.UTC)
         end_of_day_utc = end_of_day.astimezone(pytz.UTC)
         
@@ -80,6 +82,8 @@ def fetch_games(target_date, timezone=None, page=1, per_page=10):
             event_date_utc = game.get('event_date')
             if isinstance(event_date_utc, str):
                 event_date_utc = datetime.fromisoformat(event_date_utc)
+            if event_date_utc.tzinfo is None:
+                event_date_utc = pytz.utc.localize(event_date_utc)
             event_date_local = event_date_utc.astimezone(user_timezone)
 
             games.append({
@@ -99,15 +103,11 @@ def fetch_games(target_date, timezone=None, page=1, per_page=10):
         return [], 0
 
 def fetch_team_games(team, page=1, per_page=20):
-    """
-    Fetch games for a specific team from the database.
-    
-    :param team: Team name to filter games by
-    :param page: Current page number for pagination
-    :param per_page: Number of games per page
-    :return: List of games and total count of matching games
-    """
     try:
+        # Get user's timezone
+        timezone = session.get('timezone', 'UTC')
+        user_timezone = pytz.timezone(timezone)
+        
         query = {
             '$or': [
                 {'teams.home.name': team},
@@ -126,8 +126,15 @@ def fetch_team_games(team, page=1, per_page=20):
         # Process games
         games = []
         for game in games_cursor:
+            event_date_utc = game.get('event_date')
+            if isinstance(event_date_utc, str):
+                event_date_utc = datetime.fromisoformat(event_date_utc)
+            if event_date_utc.tzinfo is None:
+                event_date_utc = pytz.utc.localize(event_date_utc)
+            event_date_local = event_date_utc.astimezone(user_timezone)
+
             games.append({
-                'event_date': game.get('event_date'),
+                'event_date': event_date_local,
                 'home_team': game.get('teams', {}).get('home', {}).get('name', 'Unknown'),
                 'home_moneyline': game.get('teams', {}).get('home', {}).get('moneyline', 'N/A'),
                 'away_team': game.get('teams', {}).get('away', {}).get('name', 'Unknown'),
@@ -157,19 +164,44 @@ def get_unique_teams():
         logger.error(f"Error fetching unique teams: {e}")
         return []
 
+# Add this after the app initialization, before the routes
+
+@app.template_filter('format_datetime')
+def format_datetime(value, timezone=None):
+    """Format datetime to user's timezone and preferred format"""
+    if not timezone:
+        timezone = session.get('timezone', 'UTC')
+    tz = pytz.timezone(timezone)
+    # Ensure the datetime is timezone aware
+    if value.tzinfo is None:
+        value = pytz.utc.localize(value)
+    # Convert to user timezone
+    local_dt = value.astimezone(tz)
+    # Format as mm/dd/yyyy hh:mm AM/PM
+    return local_dt.strftime('%m/%d/%Y %I:%M %p')
+
 # --------------------- Routes ---------------------
 @app.route('/')
 @login_required
 def index():
     try:
-        now_utc = datetime.now(pytz.utc)
+        # Get user's timezone from session
         timezone = session.get('timezone', 'UTC')
+        user_tz = pytz.timezone(timezone)
+        
+        # Get current time in user's timezone
+        now_user_tz = datetime.now(user_tz)
+        
         page = int(request.args.get('page', 1))
-        games_today, total_games = fetch_games(target_date=now_utc, timezone=timezone, page=page, per_page=10)
+        games_today, total_games = fetch_games(target_date=now_user_tz, timezone=timezone, page=page, per_page=10)
         total_pages = (total_games + 10 - 1) // 10
 
-        return render_template('index.html', games=games_today, page_title="Today's Games",
-                               current_page=page, total_pages=total_pages, timezone=timezone)
+        return render_template('index.html', 
+                            games=games_today, 
+                            page_title="Today's Games",
+                            current_page=page, 
+                            total_pages=total_pages, 
+                            timezone=timezone)
     except Exception as e:
         logger.error(f"Error in index route: {e}")
         return render_template('error.html', message="An error occurred while fetching today's games.")
@@ -178,8 +210,11 @@ def index():
 @login_required
 def next_day():
     try:
-        next_day_date = datetime.now(pytz.utc) + timedelta(days=1)
-        timezone = request.args.get('timezone', 'UTC')
+        timezone = session.get('timezone', 'UTC')
+        user_tz = pytz.timezone(timezone)
+        now = datetime.now(user_tz)
+        next_day_date = now + timedelta(days=1)
+        
         page = int(request.args.get('page', 1))
         games_next_day, total_games = fetch_games(target_date=next_day_date, timezone=timezone, page=page, per_page=10)
         total_pages = (total_games + 10 - 1) // 10
@@ -194,14 +229,21 @@ def next_day():
 @login_required
 def previous_games():
     try:
-        previous_day_date = datetime.now(pytz.utc) - timedelta(days=1)
-        timezone = request.args.get('timezone', 'UTC')
+        timezone = session.get('timezone', 'UTC')
+        user_tz = pytz.timezone(timezone)
+        now = datetime.now(user_tz)
+        previous_day_date = now - timedelta(days=1)
+        
         page = int(request.args.get('page', 1))
         games_previous_day, total_games = fetch_games(target_date=previous_day_date, timezone=timezone, page=page, per_page=10)
         total_pages = (total_games + 10 - 1) // 10
 
-        return render_template('previous_games.html', games=games_previous_day, page_title="Past Games",
-                               current_page=page, total_pages=total_pages, timezone=timezone)
+        return render_template('previous_games.html', 
+                            games=games_previous_day, 
+                            page_title="Past Games",
+                            current_page=page, 
+                            total_pages=total_pages, 
+                            timezone=timezone)
     except Exception as e:
         logger.error(f"Error in previous_games route: {e}")
         return render_template('error.html', message="An error occurred while fetching past games.")
@@ -210,6 +252,9 @@ def previous_games():
 @login_required
 def team_stats():
     try:
+        # Get user's timezone
+        timezone = session.get('timezone', 'UTC')
+        
         if request.method == 'POST':
             team = request.form.get('team')
             if not team:
@@ -263,6 +308,7 @@ def team_stats():
             favored_win_rate=favored_win_rate,
             total_underdog_games=total_underdog_games,
             total_favored_games=total_favored_games,
+            timezone=timezone  # Add timezone to template context
         )
     except Exception as e:
         logger.error(f"Error in team_stats route: {e}")

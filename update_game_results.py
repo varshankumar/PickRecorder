@@ -42,15 +42,16 @@ except pymongo.errors.ConnectionError as ce:
     raise ce
 
 # --------------------- Updating Game Status ---------------------
-def fetch_scores():
+def fetch_scores(sport='basketball_nba'):
     """
-    Fetches scores for all games from The Odds API.
+    Fetches scores for specified sport from The Odds API.
+    :param sport: Sport key ('basketball_nba' or 'americanfootball_nfl')
     :return: List of games with scores and statuses.
     """
-    url = f"{API_BASE_URL}basketball_nba/scores/"
+    url = f"{API_BASE_URL}{sport}/scores/"
     params = {
         'apiKey': ODDS_API_KEY,
-        'daysFrom': 3,  # Fetch scores for games up to 3 days ago
+        'daysFrom': 3,
         'dateFormat': DATE_FORMAT
     }
 
@@ -58,18 +59,18 @@ def fetch_scores():
         response = requests.get(url, params=params)
         response.raise_for_status()
         scores_data = response.json()
-        logger.info("Fetched scores data successfully.")
+        logger.info(f"Fetched {sport} scores data successfully.")
         return scores_data
     except requests.exceptions.RequestException as req_err:
-        logger.error(f"Request exception occurred while fetching scores: {req_err}")
+        logger.error(f"Request exception occurred while fetching {sport} scores: {req_err}")
     except json.JSONDecodeError as json_err:
-        logger.error(f"JSON decode error: {json_err}")
+        logger.error(f"JSON decode error for {sport}: {json_err}")
 
     return []
 
 def update_game_status():
     """
-    Checks the status of all games in the database with null results and updates their results if available.
+    Updates results for both NBA and NFL games.
     """
     try:
         games_to_update = moneylines_collection.find({
@@ -80,9 +81,13 @@ def update_game_status():
             logger.info("No games with null results to update.")
             return
 
-        scores_data = fetch_scores()
-        if not scores_data:
-            logger.warning("No scores data fetched.")
+        # Fetch scores for both sports
+        nba_scores = fetch_scores('basketball_nba')
+        nfl_scores = fetch_scores('americanfootball_nfl')
+        all_scores = nba_scores + nfl_scores
+
+        if not all_scores:
+            logger.warning("No scores data fetched for either sport.")
             return
 
         operations = []
@@ -95,10 +100,9 @@ def update_game_status():
                 continue
 
             # Find corresponding score data
-            score_data = next((item for item in scores_data if item['id'] == game_id), None)
+            score_data = next((item for item in all_scores if item['id'] == game_id), None)
 
             if not score_data:
-                logger.warning(f"No score data found for game ID: {game_id}. Skipping.")
                 continue
 
             if score_data.get('completed', False):

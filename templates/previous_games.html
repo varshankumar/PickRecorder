@@ -1,39 +1,38 @@
 {% extends "base.html" %}
+
 {% block content %}
-<h1 class="text-center">Past Games</h1>
-{% if games %}
-    {% for game in games %}
-        <div class="card mt-3">
-            <div class="card-header">
-                <strong>Game Date:</strong> {{ game.event_date.strftime('%Y-%m-%d %H:%M:%S') }}
-            </div>
-            <div class="card-body">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Team</th>
-                            <th>Moneyline</th>
-                            <th>Status</th>
-                            <th>Winner</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{{ game.home_team }}</td>
-                            <td>{{ game.home_moneyline }}</td>
-                            <td rowspan="2">{{ game.status }}</td>
-                            <td rowspan="2">{{ game.winner if game.winner else 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td>{{ game.away_team }}</td>
-                            <td>{{ game.away_moneyline }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    {% endfor %}
-{% else %}
-    <div class="alert alert-info text-center">No games available for the previous day.</div>
-{% endif %}
+<h2>{{ page_title }}</h2>
+
+{% for game in games %}
+<div class="card mb-3">
+    <div class="card-header">
+        {{ game.event_date|format_datetime(timezone) }} - {{ game.status }}
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered mb-0">
+            <thead>
+                <tr>
+                    <th>Team</th>
+                    <th>Moneyline</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.away_team %}table-success{% else %}table-danger{% endif %}{% endif %}">
+                    <td>{{ game.away_team }}</td>
+                    <td>{{ game.away_moneyline }}</td>
+                    <td>{% if game.status == 'Completed' %}{% if game.winner == game.away_team %}Win{% else %}Loss{% endif %}{% endif %}</td>
+                </tr>
+                <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.home_team %}table-success{% else %}table-danger{% endif %}{% endif %}">
+                    <td>{{ game.home_team }}</td>
+                    <td>{{ game.home_moneyline }}</td>
+                    <td>{% if game.status == 'Completed' %}{% if game.winner == game.home_team %}Win{% else %}Loss{% endif %}{% endif %}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endfor %}
+
+{% include 'pagination.html' %}
 {% endblock %}
