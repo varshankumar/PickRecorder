@@ -49,7 +49,7 @@ except Exception as e:
 query_generator = MongoQueryGenerator(os.getenv('GEMINI_KEY'))
 
 # --------------------- Helper Functions ---------------------
-def fetch_games(target_date, timezone=None, page=1, per_page=10):
+def fetch_games(target_date, timezone=None, page=1, per_page=10, sports=None):
     try:
         timezone = timezone or session.get('timezone', 'UTC')
         user_timezone = pytz.timezone(timezone)
@@ -68,9 +68,33 @@ def fetch_games(target_date, timezone=None, page=1, per_page=10):
         start_of_day_utc = start_of_day.astimezone(pytz.UTC)
         end_of_day_utc = end_of_day.astimezone(pytz.UTC)
         
+        # Build base query with date range
         query = {"event_date": {"$gte": start_of_day_utc, "$lt": end_of_day_utc}}
         
+        # Debug: Check what sports are actually in the database
+        distinct_sports = moneylines_collection.distinct('sport')
+        logger.info(f"Available sports in database: {distinct_sports}")
+        
+        # Add sport filter if specified (using correct database format)
+        if sports and isinstance(sports, list):
+            sport_mapping = {
+                'NBA': 'Basketball NBA',
+                'NFL': 'American Football NFL',
+                'Basketball NBA': 'Basketball NBA',
+                'American Football NFL': 'American Football NFL'
+            }
+            mapped_sports = [sport_mapping[s] for s in sports if s in sport_mapping]
+            if mapped_sports:
+                query['sport'] = {'$in': mapped_sports}
+        
+        # Log the query and sample document
+        logger.info(f"MongoDB Query: {query}")
+        sample_game = moneylines_collection.find_one()
+        logger.info(f"Sample game document: {sample_game}")
+        
         total_games = moneylines_collection.count_documents(query)
+        logger.info(f"Found {total_games} games matching query")
+        
         if total_games == 0:
             return [], 0
 
@@ -193,7 +217,15 @@ def index():
         now_user_tz = datetime.now(user_tz)
         
         page = int(request.args.get('page', 1))
-        games_today, total_games = fetch_games(target_date=now_user_tz, timezone=timezone, page=page, per_page=10)
+        selected_sports = request.args.getlist('sports') or ['NBA', 'NFL']
+        
+        games_today, total_games = fetch_games(
+            target_date=now_user_tz, 
+            timezone=timezone, 
+            page=page, 
+            per_page=10,
+            sports=selected_sports
+        )
         total_pages = (total_games + 10 - 1) // 10
 
         return render_template('index.html', 
@@ -201,7 +233,8 @@ def index():
                             page_title="Today's Games",
                             current_page=page, 
                             total_pages=total_pages, 
-                            timezone=timezone)
+                            timezone=timezone,
+                            selected_sports=selected_sports)
     except Exception as e:
         logger.error(f"Error in index route: {e}")
         return render_template('error.html', message="An error occurred while fetching today's games.")
@@ -216,14 +249,27 @@ def next_day():
         next_day_date = now + timedelta(days=1)
         
         page = int(request.args.get('page', 1))
-        games_next_day, total_games = fetch_games(target_date=next_day_date, timezone=timezone, page=page, per_page=10)
+        selected_sports = request.args.getlist('sports') or ['NBA', 'NFL']
+        
+        games_next_day, total_games = fetch_games(
+            target_date=next_day_date,
+            timezone=timezone,
+            page=page,
+            per_page=10,
+            sports=selected_sports
+        )
         total_pages = (total_games + 10 - 1) // 10
 
-        return render_template('next_day.html', games=games_next_day, page_title="Upcoming Games",
-                               current_page=page, total_pages=total_pages, timezone=timezone)
+        return render_template('next_day.html', 
+                            games=games_next_day, 
+                            page_title="Tomorrow's Games",
+                            current_page=page, 
+                            total_pages=total_pages, 
+                            timezone=timezone,
+                            selected_sports=selected_sports)
     except Exception as e:
         logger.error(f"Error in next_day route: {e}")
-        return render_template('error.html', message="An error occurred while fetching upcoming games.")
+        return render_template('error.html', message="An error occurred while fetching tomorrow's games.")
 
 @app.route('/previous_games')
 @login_required
@@ -235,18 +281,27 @@ def previous_games():
         previous_day_date = now - timedelta(days=1)
         
         page = int(request.args.get('page', 1))
-        games_previous_day, total_games = fetch_games(target_date=previous_day_date, timezone=timezone, page=page, per_page=10)
+        selected_sports = request.args.getlist('sports') or ['NBA', 'NFL']
+        
+        games_previous_day, total_games = fetch_games(
+            target_date=previous_day_date,
+            timezone=timezone,
+            page=page,
+            per_page=10,
+            sports=selected_sports
+        )
         total_pages = (total_games + 10 - 1) // 10
 
         return render_template('previous_games.html', 
                             games=games_previous_day, 
-                            page_title="Past Games",
+                            page_title="Yesterday's Games",
                             current_page=page, 
                             total_pages=total_pages, 
-                            timezone=timezone)
+                            timezone=timezone,
+                            selected_sports=selected_sports)
     except Exception as e:
         logger.error(f"Error in previous_games route: {e}")
-        return render_template('error.html', message="An error occurred while fetching past games.")
+        return render_template('error.html', message="An error occurred while fetching yesterday's games.")
 
 @app.route('/team_stats', methods=['GET', 'POST'])
 @login_required
@@ -301,7 +356,7 @@ def team_stats():
             games=games,
             selected_team=team,
             teams=get_unique_teams(),
-            page_title=f"Stats for {team}" if team else "Team Statistics",
+            page_title=f"Stats for {team}" if team else "Team Stats",  # Changed this line
             current_page=page,
             total_pages=total_pages,
             underdog_win_rate=underdog_win_rate,
