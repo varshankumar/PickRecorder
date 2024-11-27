@@ -45,7 +45,7 @@ except pymongo.errors.ConnectionError as ce:
 def fetch_scores(sport='basketball_nba'):
     """
     Fetches scores for specified sport from The Odds API.
-    :param sport: Sport key ('basketball_nba' or 'americanfootball_nfl')
+    :param sport: Sport key (basketball_nba, americanfootball_nfl, basketball_ncaab, americanfootball_ncaaf, icehockey_nhl)
     :return: List of games with scores and statuses.
     """
     url = f"{API_BASE_URL}{sport}/scores/"
@@ -70,7 +70,7 @@ def fetch_scores(sport='basketball_nba'):
 
 def update_game_status():
     """
-    Updates results for both NBA and NFL games.
+    Updates results for all configured sports games.
     """
     try:
         games_to_update = moneylines_collection.find({
@@ -81,13 +81,17 @@ def update_game_status():
             logger.info("No games with null results to update.")
             return
 
-        # Fetch scores for both sports
+        # Fetch scores for all sports
         nba_scores = fetch_scores('basketball_nba')
         nfl_scores = fetch_scores('americanfootball_nfl')
-        all_scores = nba_scores + nfl_scores
+        ncaab_scores = fetch_scores('basketball_ncaab')
+        ncaaf_scores = fetch_scores('americanfootball_ncaaf')
+        nhl_scores = fetch_scores('icehockey_nhl')
+        
+        all_scores = nba_scores + nfl_scores + ncaab_scores + ncaaf_scores + nhl_scores
 
         if not all_scores:
-            logger.warning("No scores data fetched for either sport.")
+            logger.warning("No scores data fetched for any sport.")
             return
 
         operations = []

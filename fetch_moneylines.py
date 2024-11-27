@@ -51,7 +51,7 @@ def fetch_moneyline_odds(sport_key):
     """
     url = f"{API_BASE_URL}{sport_key}/odds"
     params = {
-        'api_key': ODDS_API_KEY,
+        'apiKey': ODDS_API_KEY,
         'regions': REGION,          # e.g., 'us'
         'markets': MARKET,          # e.g., 'h2h' for moneyline
         'oddsFormat': ODDS_FORMAT,  # 'american' or 'decimal'
@@ -62,7 +62,7 @@ def fetch_moneyline_odds(sport_key):
         response = requests.get(url, params=params)
         response.raise_for_status()
         odds_data = response.json()
-        logger.info(f"Fetched odds data for sport: {SPORTS[sport_key]}")
+        logger.info(f"Fetched odds data for sport: {SPORTS.get(sport_key, 'Unknown Sport')}")
         return odds_data
     except requests.exceptions.HTTPError as http_err:
         logger.error(f"HTTP error occurred: {http_err} - Status Code: {response.status_code}")
@@ -183,7 +183,7 @@ def get_league_name(sport_key):
 def main():
     sports_to_fetch = ['basketball_nba', 'americanfootball_nfl']
 
-    for sport_key in sports_to_fetch:
+    for sport_key in SPORTS.keys():
         odds_data = fetch_moneyline_odds(sport_key)
         if odds_data:
             process_and_store_odds(odds_data, sport_key)

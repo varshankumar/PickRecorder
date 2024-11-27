@@ -1,102 +1,264 @@
 {% extends "base.html" %}
 
-{% block content %}
-<div class="text-center mb-4">
-    <h1 class="display-4">{{ page_title }}</h1>
-</div>
+{% block title %}{{ page_title }}{% endblock title %}
 
-<div class="container mt-4">
-    <form method="POST" class="mb-3">
-        <div class="row">
-            <div class="col-md-8">
-                <select name="team" class="form-select">
-                    <option value="" disabled selected>Select a team</option>
-                    {% for team in teams %}
-                    <option value="{{ team }}" {% if team == selected_team %}selected{% endif %}>{{ team }}</option>
-                    {% endfor %}
-                </select>
+{% block styles %}
+<style>
+.custom-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    margin: 2px auto 0;
+    padding: 8px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1050;
+}
+
+.custom-dropdown .dropdown-item {
+    display: block;
+    padding: 10px 15px;
+    margin: 5px 0;
+    color: #333;
+    text-decoration: none;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    background: #fff;
+}
+
+.custom-dropdown .dropdown-item:hover {
+    background-color: #e9ecef;
+    border-color: #0d6efd;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.custom-dropdown .highlight {
+    background-color: #ffd43b;
+    color: #000;
+    font-weight: bold;
+    padding: 2px 4px;
+    border-radius: 3px;
+    margin: 0 -2px;
+}
+</style>
+{% endblock styles %}
+
+{% block content %}
+    <div class="text-center mb-4">
+        <h1 class="display-4">{{ page_title }}</h1>
+        
+        <form method="POST" class="mb-4">
+            <div class="form-group position-relative">
+                <input type="text" 
+                       name="team" 
+                       id="team" 
+                       class="form-control" 
+                       placeholder="Type to search teams..."
+                       autocomplete="off"
+                       value="{% if selected_team and selected_team != 'None' %}{{ selected_team }}{% endif %}"
+                       style="max-width: 400px; margin: 0 auto;">
+                <div id="suggestions" class="custom-dropdown" style="display: none;"></div>
             </div>
-            <div class="col-md-4">
-                <button type="submit" class="btn btn-primary w-100">Submit</button>
-            </div>
-        </div>
-    </form>
+            <button type="submit" class="btn btn-primary mt-2">View Stats</button>
+        </form>
+    </div>
 
     {% if selected_team %}
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <h5 class="text-center">Underdog Win Percentage</h5>
-            <canvas id="underdogChart"></canvas>
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">As Favorite</h5>
+                        <div class="d-flex justify-content-center">
+                            <div style="width: 200px; height: 200px;">
+                                <canvas id="favoredChart"></canvas>
+                            </div>
+                        </div>
+                        <p class="card-text text-center mt-2">
+                            Win Rate: {{ "%.1f"|format(favored_win_rate) }}%<br>
+                            Games: {{ total_favored_games }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">As Underdog</h5>
+                        <div class="d-flex justify-content-center">
+                            <div style="width: 200px; height: 200px;">
+                                <canvas id="underdogChart"></canvas>
+                            </div>
+                        </div>
+                        <p class="card-text text-center mt-2">
+                            Win Rate: {{ "%.1f"|format(underdog_win_rate) }}%<br>
+                            Games: {{ total_underdog_games }}
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="col-md-6">
-            <h5 class="text-center">Favored Win Percentage</h5>
-            <canvas id="favoredChart"></canvas>
-        </div>
-    </div>
+
+        <script>
+            // Favored games chart
+            new Chart(document.getElementById('favoredChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Wins', 'Losses'],
+                    datasets: [{
+                        data: [
+                            {{ (favored_win_rate * total_favored_games / 100)|round|int }},
+                            {{ total_favored_games - (favored_win_rate * total_favored_games / 100)|round|int }}
+                        ],
+                        backgroundColor: ['#198754', '#dc3545']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Underdog games chart
+            new Chart(document.getElementById('underdogChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Wins', 'Losses'],
+                    datasets: [{
+                        data: [
+                            {{ (underdog_win_rate * total_underdog_games / 100)|round|int }},
+                            {{ total_underdog_games - (underdog_win_rate * total_underdog_games / 100)|round|int }}
+                        ],
+                        backgroundColor: ['#198754', '#dc3545']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        </script>
+
+        {% if games %}
+            <div class="table-responsive">
+                {% for game in games %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        {{ game.event_date|format_datetime(timezone) }} - {{ game.status }}
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-bordered mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Team</th>
+                                    <th>Moneyline</th>
+                                    <th>Score</th>
+                                    <th>Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.away_team %}table-success{% elif game.winner != 'N/A' %}table-danger{% endif %}{% endif %}">
+                                    <td>{{ game.away_team }}</td>
+                                    <td>{{ game.away_moneyline }}</td>
+                                    <td>{{ game.result.away_score if game.result else 'N/A' }}</td>
+                                    <td>
+                                        {% if game.status == 'Completed' %}
+                                            {% if game.winner == game.away_team %}Win{% elif game.winner != 'N/A' %}Loss{% endif %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.home_team %}table-success{% elif game.winner != 'N/A' %}table-danger{% endif %}{% endif %}">
+                                    <td>{{ game.home_team }}</td>
+                                    <td>{{ game.home_moneyline }}</td>
+                                    <td>{{ game.result.home_score if game.result else 'N/A' }}</td>
+                                    <td>
+                                        {% if game.status == 'Completed' %}
+                                            {% if game.winner == game.home_team %}Win{% elif game.winner != 'N/A' %}Loss{% endif %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% include 'pagination.html' %}
+        {% else %}
+            <div class="alert alert-info">No games found for {{ selected_team }}</div>
+        {% endif %}
     {% endif %}
 
-    {% if games %}
-    <div class="card mt-3">
-        <div class="card-body">
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Home Team</th>
-                        <th>Home Moneyline</th>
-                        <th>Away Team</th>
-                        <th>Away Moneyline</th>
-                        <th>Status</th>
-                        <th>Winner</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for game in games %}
-                    <tr>
-                        <td>{{ game.event_date|format_datetime(timezone) }}</td>
-                        <td>{{ game.home_team }}</td>
-                        <td>{{ game.home_moneyline }}</td>
-                        <td>{{ game.away_team }}</td>
-                        <td>{{ game.away_moneyline }}</td>
-                        <td>{{ game.status }}</td>
-                        <td>{{ game.winner }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {% else %}
-    <div class="alert alert-info text-center">No games found for the selected team.</div>
-    {% endif %}
-</div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const teamInput = document.getElementById('team');
+        const suggestions = document.getElementById('suggestions');
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Underdog Chart
-    const underdogCtx = document.getElementById('underdogChart').getContext('2d');
-    new Chart(underdogCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Win Percentage', 'Loss Percentage'],
-            datasets: [{
-                data: [{{ underdog_win_rate }}, {{ 100 - underdog_win_rate }}],
-                backgroundColor: ['#4caf50', '#f44336']
-            }]
-        }
+        teamInput.addEventListener('input', function(e) {
+            const filter = e.target.value.trim();
+            
+            if (filter.length < 1) {
+                suggestions.style.display = 'none';
+                return;
+            }
+
+            const teams = [
+                {% for team in teams %}
+                    '{{ team }}'{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ];
+            const filterLower = filter.toLowerCase();
+            
+            const matches = teams.filter(team => 
+                team.toLowerCase().includes(filterLower)
+            ).slice(0, 10);
+
+            if (matches.length > 0) {
+                suggestions.innerHTML = matches.map(team => {
+                    const teamLower = team.toLowerCase();
+                    const matchIndex = teamLower.indexOf(filterLower);
+                    const beforeMatch = team.slice(0, matchIndex);
+                    const matchText = team.slice(matchIndex, matchIndex + filter.length);
+                    const afterMatch = team.slice(matchIndex + filter.length);
+                    
+                    return `<a class="dropdown-item" href="#" onclick="selectTeam('${team}'); return false;">
+                        ${beforeMatch}<span class="highlight">${matchText}</span>${afterMatch}
+                    </a>`;
+                }).join('');
+                
+                suggestions.style.display = 'block';
+            } else {
+                suggestions.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#team')) {
+                document.getElementById('suggestions').style.display = 'none';
+            }
+        });
     });
 
-    // Favored Chart
-    const favoredCtx = document.getElementById('favoredChart').getContext('2d');
-    new Chart(favoredCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Win Percentage', 'Loss Percentage'],
-            datasets: [{
-                data: [{{ favored_win_rate }}, {{ 100 - favored_win_rate }}],
-                backgroundColor: ['#2196f3', '#ffeb3b']
-            }]
-        }
-    });
-</script>
-{% endblock %}
+    function selectTeam(team) {
+        document.getElementById('team').value = team;
+        document.getElementById('suggestions').style.display = 'none';
+    }
+    </script>
+{% endblock content %}

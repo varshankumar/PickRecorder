@@ -1,0 +1,30 @@
+<div class="d-flex justify-content-center">
+    <div class="btn-group mb-3" role="group">
+        {% for sport in ['NBA', 'NFL', 'NCAAB', 'NCAAF', 'NHL'] %}
+        <input type="radio" class="btn-check sport-filter" name="sports" value="{{ sport }}" 
+               id="{{ sport }}" {% if (request.args.getlist('sports') and sport in request.args.getlist('sports')) or (not request.args.getlist('sports') and sport == 'NBA') %}checked{% endif %}>
+        <label class="btn btn-outline-primary" for="{{ sport }}">{{ sport }}</label>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.sport-filter').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const checkedSports = Array.from(document.querySelectorAll('.sport-filter:checked'))
+                .map(input => input.value);
+            
+            const url = new URL(window.location.href);
+            url.searchParams.delete('sports');
+            checkedSports.forEach(sport => url.searchParams.append('sports', sport));
+            
+            // Preserve page parameter if it exists
+            const page = new URLSearchParams(window.location.search).get('page');
+            if (page) {
+                url.searchParams.set('page', page);
+            }
+            
+            window.location.href = url.toString();
+        });
+    });
+</script>

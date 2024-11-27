@@ -1,31 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Today's Games{% endblock %}
-
 {% block content %}
-<div class="container mt-4">
     <div class="text-center mb-4">
         <h1 class="display-4">{{ page_title }}</h1>
     </div>
 
-    <div class="mb-4 text-center">
-        <div class="btn-group" role="group">
-            <input type="checkbox" class="btn-check sport-filter" id="nba" name="sports" value="NBA" 
-                   {% if 'NBA' in selected_sports %}checked{% endif %} autocomplete="off">
-            <label class="btn btn-outline-primary" for="nba">NBA</label>
-
-            <input type="checkbox" class="btn-check sport-filter" id="nfl" name="sports" value="NFL" 
-                   {% if 'NFL' in selected_sports %}checked{% endif %} autocomplete="off">
-            <label class="btn btn-outline-primary" for="nfl">NFL</label>
-        </div>
-    </div>
+    {% include 'sports_filter.html' %}
 
     {% if games %}
+    <div class="table-responsive">
         {% for game in games %}
         <div class="card mb-3">
             <div class="card-header">
-                {{ game.event_date|format_datetime(timezone) }}
-                <span class="float-end">{{ game.status }}</span>
+                {{ game.event_date|format_datetime(timezone) }} - {{ game.status }}
             </div>
             <div class="card-body">
                 <table class="table table-bordered mb-0">
@@ -61,40 +48,12 @@
             </div>
         </div>
         {% endfor %}
+    </div>
     {% else %}
-        <div class="alert alert-info text-center">No games available for today.</div>
+    <div class="alert alert-info text-center" role="alert">
+        No games available for the selected sport.
+    </div>
     {% endif %}
-</div>
 
-{% include 'pagination.html' %}
-
-<script>
-    document.querySelectorAll('.sport-filter').forEach(checkbox => {
-        checkbox.addEventListener('change', () => {
-            const selectedSports = Array.from(document.querySelectorAll('.sport-filter:checked'))
-                .map(cb => cb.value);
-            
-            // Ensure at least one sport is selected
-            if (selectedSports.length === 0) {
-                checkbox.checked = true;
-                return;
-            }
-            
-            // Build URL with selected sports
-            const url = new URL(window.location.href);
-            url.searchParams.delete('sports');
-            selectedSports.forEach(sport => {
-                url.searchParams.append('sports', sport);
-            });
-            
-            // Preserve page parameter if it exists
-            const page = new URLSearchParams(window.location.search).get('page');
-            if (page) {
-                url.searchParams.set('page', page);
-            }
-            
-            window.location.href = url.toString();
-        });
-    });
-</script>
-{% endblock %} 
+    {% include 'pagination.html' %}
+{% endblock %}

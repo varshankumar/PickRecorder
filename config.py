@@ -20,7 +20,10 @@ if not ODDS_API_KEY:
 API_BASE_URL = 'https://api.the-odds-api.com/v4/sports/'
 SPORTS = {
     'basketball_nba': 'Basketball NBA',
-    'americanfootball_nfl': 'American Football NFL'
+    'americanfootball_nfl': 'American Football NFL',
+    'basketball_ncaab': 'Basketball NCAA',
+    'americanfootball_ncaaf': 'American Football NCAA',
+    'icehockey_nhl': 'Ice Hockey NHL'
 }
 REGION = 'us'         # Can be 'us', 'uk', 'eu', 'au'
 MARKET = 'h2h'        # Moneyline

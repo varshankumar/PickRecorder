@@ -2,17 +2,19 @@
 <nav aria-label="Page navigation">
   <ul class="pagination justify-content-center">
     <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
-      <a class="page-link" href="?page={{ current_page - 1 }}" {% if current_page == 1 %}tabindex="-1" aria-disabled="true"{% endif %}>Previous</a>
+      <a class="page-link" href="?page={{ current_page - 1 }}{% for sport in selected_sports %}&sports={{ sport }}{% endfor %}" 
+         {% if current_page == 1 %}tabindex="-1" aria-disabled="true"{% endif %}>Previous</a>
     </li>
     
     {% for num in range(1, total_pages + 1) %}
       <li class="page-item {% if num == current_page %}active{% endif %}">
-        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+        <a class="page-link" href="?page={{ num }}{% for sport in selected_sports %}&sports={{ sport }}{% endfor %}">{{ num }}</a>
       </li>
     {% endfor %}
     
     <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
-      <a class="page-link" href="?page={{ current_page + 1 }}" {% if current_page == total_pages %}tabindex="-1" aria-disabled="true"{% endif %}>Next</a>
+      <a class="page-link" href="?page={{ current_page + 1 }}{% for sport in selected_sports %}&sports={{ sport }}{% endfor %}" 
+         {% if current_page == total_pages %}tabindex="-1" aria-disabled="true"{% endif %}>Next</a>
     </li>
   </ul>
 </nav>
