@@ -38,8 +38,8 @@ A web application for tracking sports betting odds and results across NBA and NF
 ## Automated Tasks
 Uses GitHub Actions for:
 
-- Daily odds fetching (15:00 UTC)
-- Game results updates (hourly between 12 PM - 10 PM PST)
+- Daily odds fetching (7 AM PST)
+- Game results updates (hourly between 12 PM - 11 PM PST)
 - Background task scheduling using PST timezone
 
 ## License
