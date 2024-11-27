@@ -5,8 +5,8 @@ import pytz
 
 # Constants for update scheduling
 PST_TZ = pytz.timezone('America/Los_Angeles')
-START_TIME = datetime.now(PST_TZ).replace(hour=13, minute=0, second=0, microsecond=0)  # 1 PM PST
-END_TIME = datetime.now(PST_TZ).replace(hour=22, minute=0, second=0, microsecond=0)    # 10 PM PST
+START_TIME = datetime.now(PST_TZ).replace(hour=12, minute=0, second=0, microsecond=0)
+END_TIME = datetime.now(PST_TZ).replace(hour=22, minute=0, second=0, microsecond=0)
 UPDATE_INTERVAL_HOURS = 1
 
 def is_within_update_window():
