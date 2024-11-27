@@ -2,55 +2,6 @@
 
 {% block title %}{{ page_title }}{% endblock title %}
 
-{% block styles %}
-<style>
-.custom-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 400px;
-    margin: 2px auto 0;
-    padding: 8px;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    max-height: 300px;
-    overflow-y: auto;
-    z-index: 1050;
-}
-
-.custom-dropdown .dropdown-item {
-    display: block;
-    padding: 10px 15px;
-    margin: 5px 0;
-    color: #333;
-    text-decoration: none;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-    background: #fff;
-}
-
-.custom-dropdown .dropdown-item:hover {
-    background-color: #e9ecef;
-    border-color: #0d6efd;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.custom-dropdown .highlight {
-    background-color: #ffd43b;
-    color: #000;
-    font-weight: bold;
-    padding: 2px 4px;
-    border-radius: 3px;
-    margin: 0 -2px;
-}
-</style>
-{% endblock styles %}
-
 {% block content %}
     <div class="text-center mb-4">
         <h1 class="display-4">{{ page_title }}</h1>
@@ -206,59 +157,62 @@
         {% endif %}
     {% endif %}
 
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const teamInput = document.getElementById('team');
-        const suggestions = document.getElementById('suggestions');
+{% endblock content %}
 
-        teamInput.addEventListener('input', function(e) {
-            const filter = e.target.value.trim();
-            
-            if (filter.length < 1) {
-                suggestions.style.display = 'none';
-                return;
-            }
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const teamInput = document.getElementById('team');
+    const suggestions = document.getElementById('suggestions');
 
-            const teams = [
-                {% for team in teams %}
-                    '{{ team }}'{% if not loop.last %},{% endif %}
-                {% endfor %}
-            ];
-            const filterLower = filter.toLowerCase();
-            
-            const matches = teams.filter(team => 
-                team.toLowerCase().includes(filterLower)
-            ).slice(0, 10);
+    teamInput.addEventListener('input', function(e) {
+        const filter = e.target.value.trim();
+        
+        if (filter.length < 1) {
+            suggestions.style.display = 'none';
+            return;
+        }
 
-            if (matches.length > 0) {
-                suggestions.innerHTML = matches.map(team => {
-                    const teamLower = team.toLowerCase();
-                    const matchIndex = teamLower.indexOf(filterLower);
-                    const beforeMatch = team.slice(0, matchIndex);
-                    const matchText = team.slice(matchIndex, matchIndex + filter.length);
-                    const afterMatch = team.slice(matchIndex + filter.length);
-                    
-                    return `<a class="dropdown-item" href="#" onclick="selectTeam('${team}'); return false;">
-                        ${beforeMatch}<span class="highlight">${matchText}</span>${afterMatch}
-                    </a>`;
-                }).join('');
+        const teams = [
+            {% for team in teams %}
+                '{{ team }}'{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+        const filterLower = filter.toLowerCase();
+        
+        const matches = teams.filter(team => 
+            team.toLowerCase().includes(filterLower)
+        ).slice(0, 10);
+
+        if (matches.length > 0) {
+            suggestions.innerHTML = matches.map(team => {
+                const teamLower = team.toLowerCase();
+                const matchIndex = teamLower.indexOf(filterLower);
+                const beforeMatch = team.slice(0, matchIndex);
+                const matchText = team.slice(matchIndex, matchIndex + filter.length);
+                const afterMatch = team.slice(matchIndex + filter.length);
                 
-                suggestions.style.display = 'block';
-            } else {
-                suggestions.style.display = 'none';
-            }
-        });
-
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('#team')) {
-                document.getElementById('suggestions').style.display = 'none';
-            }
-        });
+                return `<a class="dropdown-item" href="#" onclick="selectTeam('${team}'); return false;">
+                    ${beforeMatch}<span class="highlight">${matchText}</span>${afterMatch}
+                </a>`;
+            }).join('');
+            
+            suggestions.style.display = 'block';
+        } else {
+            suggestions.style.display = 'none';
+        }
     });
 
-    function selectTeam(team) {
-        document.getElementById('team').value = team;
-        document.getElementById('suggestions').style.display = 'none';
-    }
-    </script>
-{% endblock content %}
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#team')) {
+            suggestions.style.display = 'none';
+        }
+    });
+});
+
+function selectTeam(team) {
+    document.getElementById('team').value = team;
+    document.getElementById('suggestions').style.display = 'none';
+}
+</script>
+{% endblock scripts %}

@@ -21,3 +21,48 @@ h1 {
 .badge-info {
     background-color: #17a2b8;
 }
+
+.custom-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    margin: 2px auto 0;
+    padding: 8px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1050;
+}
+
+.custom-dropdown .dropdown-item {
+    display: block;
+    padding: 10px 15px;
+    margin: 5px 0;
+    color: #333;
+    text-decoration: none;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    background: #fff;
+}
+
+.custom-dropdown .dropdown-item:hover {
+    background-color: #e9ecef;
+    border-color: #0d6efd;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.custom-dropdown .highlight {
+    background-color: #ffd43b;
+    color: #000;
+    font-weight: bold;
+    padding: 2px 4px;
+    border-radius: 3px;
+    margin: 0 -2px;
+}
