@@ -27,44 +27,68 @@
     {% if results %}
     <div class="mb-3">
         <h3>Search Results</h3>
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Home Team</th>
-                        <th>Away Team</th>
-                        <th>Home ML</th>
-                        <th>Away ML</th>
-                        <th>Winner</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for game in results %}
-                    <tr>
-                        <td>{{ game.event_date.strftime('%Y-%m-%d %H:%M') }}</td>
-                        <td>{{ game.teams.home.name }}</td>
-                        <td>{{ game.teams.away.name }}</td>
-                        <td>{{ game.teams.home.moneyline }}</td>
-                        <td>{{ game.teams.away.moneyline }}</td>
-                        <td>{{ game.result.winner if game.result and game.result.winner else 'N/A' }}</td>
-                        <td>{{ game.status }}</td>
-                    </tr>
+
+        {% if is_aggregation %}
+            <!-- Display computed statistics -->
+            <div class="card">
+                <div class="card-body">
+                    {% for result in results %}
+                        <p>Win Rate:
+                            {% if result.win_rate is defined %}
+                                {{ result.win_rate | round(2) }}%
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </p>
+                        <p>Total Games: {{ result.total_games }}</p>
+                        <p>Wins: {{ result.wins }}</p>
                     {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Display games in the same table format -->
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Home Team</th>
+                            <th>Away Team</th>
+                            <th>Home ML</th>
+                            <th>Away ML</th>
+                            <th>Winner</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for game in results %}
+                        <tr>
+                            <td>{{ game.event_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ game.teams.home.name }}</td>
+                            <td>{{ game.teams.away.name }}</td>
+                            <td>{{ game.teams.home.moneyline }}</td>
+                            <td>{{ game.teams.away.moneyline }}</td>
+                            <td>{{ game.result.winner if game.result and game.result.winner else 'N/A' }}</td>
+                            <td>{{ game.status }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
     </div>
     
+    {# Remove or comment out the following block using Jinja2 comments #}
+    {#
     {% if mongo_query %}
     <div class="card mt-4">
-        <div class="card-header">Generated MongoDB Query</div>
+        <div class="card-header">Generated MongoDB {{ 'Aggregation Pipeline' if is_aggregation else 'Query' }}</div>
         <div class="card-body">
             <pre><code>{{ mongo_query }}</code></pre>
         </div>
     </div>
     {% endif %}
+    #}
     {% endif %}
 </div>
 {% endblock %}

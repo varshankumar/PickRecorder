@@ -390,17 +390,34 @@ def search():
             if not natural_query:
                 return render_template('search.html', error="Please enter a query")
 
-            # Generate MongoDB query from natural language
-            mongo_query = query_generator.generate_query(natural_query)
-            mongo_query = query_generator.process_date_filters(mongo_query)
+            # Generate MongoDB query or aggregation pipeline
+            result = query_generator.generate_query(natural_query)
+            mongo_query = result['query']
+            is_aggregation = result['is_aggregation']
 
             # Execute the query
-            results = list(moneylines_collection.find(mongo_query).limit(20))
+            try:
+                if is_aggregation:
+                    # Execute aggregation pipeline
+                    results = list(moneylines_collection.aggregate(mongo_query))
+                else:
+                    # Execute find query
+                    results = list(moneylines_collection.find(mongo_query).limit(20))
+            except Exception as e:
+                logger.error(f"Error executing MongoDB query: {e}")
+                logger.error(f"Generated Query: {mongo_query}")
+                return render_template('search.html', error="Invalid query generated. Please try a different search.")
 
-            return render_template('search.html', 
-                                results=results, 
-                                query=natural_query, 
-                                mongo_query=json.dumps(mongo_query, indent=2))
+            # Log the results for debugging
+            logger.info(f"Query results: {results}")
+
+            # Render the results
+            return render_template(
+                'search.html',
+                results=results,
+                query=natural_query,
+                is_aggregation=is_aggregation
+            )
 
         return render_template('search.html')
     except Exception as e:
