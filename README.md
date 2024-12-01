@@ -43,4 +43,4 @@ Uses GitHub Actions for:
 - Background task scheduling using PST timezone
 
 ## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is proprietary and not licensed for distribution or modification. The source code is provided exclusively for evaluation purposes. Any use, reproduction, or distribution of this code without permission is prohibited.
