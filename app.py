@@ -176,10 +176,14 @@ def fetch_team_games(team, page=1, per_page=20):
                 'away_moneyline': game.get('teams', {}).get('away', {}).get('moneyline', 'N/A'),
                 'winner': game.get('result', {}).get('winner', 'N/A'),
                 'status': game.get('status', 'In Progress'),
+                'result': {  # Add scores to the game data
+                    'home_score': game.get('result', {}).get('home_score', 'N/A'),
+                    'away_score': game.get('result', {}).get('away_score', 'N/A')
+                }
             })
 
-        # Remove the sort since we're already sorted from the database
         return games, total_games
+        
     except Exception as e:
         logger.error(f"Error in fetch_team_games function: {e}")
         return [], 0
@@ -334,32 +338,43 @@ def team_stats():
         games, total_games = fetch_team_games(team, page=page, per_page=per_page) if team else ([], 0)
 
         # Calculate win statistics
-        total_games_played = len(games)
         underdog_wins = 0
         favored_wins = 0
+        total_completed_underdog_games = 0
+        total_completed_favored_games = 0
         total_underdog_games = 0
         total_favored_games = 0
 
         for game in games:
+            # Determine if team is favored, regardless of game status
             if game['home_team'] == team:
                 is_favored = game['home_moneyline'] < game['away_moneyline']
-                did_win = game['winner'] == team
             else:
                 is_favored = game['away_moneyline'] < game['home_moneyline']
-                did_win = game['winner'] == team
 
+            # Track total games
             if is_favored:
                 total_favored_games += 1
-                if did_win:
-                    favored_wins += 1
             else:
                 total_underdog_games += 1
-                if did_win:
+
+            # Skip games that aren't completed for win statistics
+            if game['status'] != 'Completed':
+                continue
+
+            # Track completed games and wins
+            if is_favored:
+                total_completed_favored_games += 1
+                if game['winner'] == team:
+                    favored_wins += 1
+            else:
+                total_completed_underdog_games += 1
+                if game['winner'] == team:
                     underdog_wins += 1
 
-        # Calculate percentages
-        underdog_win_rate = (underdog_wins / total_underdog_games) * 100 if total_underdog_games > 0 else 0
-        favored_win_rate = (favored_wins / total_favored_games) * 100 if total_favored_games > 0 else 0
+        # Calculate percentages based only on completed games
+        underdog_win_rate = (underdog_wins / total_completed_underdog_games * 100) if total_completed_underdog_games > 0 else 0
+        favored_win_rate = (favored_wins / total_completed_favored_games * 100) if total_completed_favored_games > 0 else 0
 
         total_pages = (total_games + per_page - 1) // per_page
 
@@ -368,14 +383,18 @@ def team_stats():
             games=games,
             selected_team=team,
             teams=get_unique_teams(),
-            page_title=f"Stats for {team}" if team else "Team Stats",  # Changed this line
+            page_title=f"Stats for {team}" if team else "Team Stats",
             current_page=page,
             total_pages=total_pages,
             underdog_win_rate=underdog_win_rate,
             favored_win_rate=favored_win_rate,
             total_underdog_games=total_underdog_games,
             total_favored_games=total_favored_games,
-            timezone=timezone  # Add timezone to template context
+            total_completed_underdog_games=total_completed_underdog_games,
+            total_completed_favored_games=total_completed_favored_games,
+            underdog_wins=underdog_wins,
+            favored_wins=favored_wins,
+            timezone=timezone
         )
     except Exception as e:
         logger.error(f"Error in team_stats route: {e}")

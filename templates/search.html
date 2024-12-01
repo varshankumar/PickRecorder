@@ -29,19 +29,19 @@
         <h3>Search Results</h3>
 
         {% if is_aggregation %}
-            <!-- Display computed statistics -->
+            <!-- Display AI analysis -->
             <div class="card">
                 <div class="card-body">
                     {% for result in results %}
-                        <p>Win Rate:
-                            {% if result.win_rate is defined %}
-                                {{ result.win_rate | round(2) }}%
-                            {% else %}
-                                N/A
+                        {% for key, value in result.items() %}
+                            {% if key != '_id' %}
+                                {% if value is number %}
+                                    <p>{{ key }}: {{ value | round(2) }}</p>
+                                {% else %}
+                                    <p>{{ key }}: {{ value }}</p>
+                                {% endif %}
                             {% endif %}
-                        </p>
-                        <p>Total Games: {{ result.total_games }}</p>
-                        <p>Wins: {{ result.wins }}</p>
+                        {% endfor %}
                     {% endfor %}
                 </div>
             </div>

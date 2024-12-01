@@ -34,29 +34,48 @@ You are an assistant that converts natural language queries into MongoDB queries
 {json.dumps(self.collection_schema, indent=2)}
 
 **Instructions:**
-- Determine if the user's query requires data aggregation (e.g., calculating win rates).
-- If so, output a MongoDB aggregation pipeline as a Python list of dictionaries.
-- If not, output a MongoDB find query as a JSON object.
+- Determine if the user's query requires data analysis (e.g., calculating statistics, trends, patterns).
+- If analysis is needed, output a MongoDB aggregation pipeline that creates meaningful summary fields.
+- The output fields can be any descriptive names that match the analysis.
+- For statistical queries, include both raw numbers and calculated percentages when relevant.
+- If no analysis is needed, output a MongoDB find query as a JSON object.
 - Ensure that all operators and operands are correctly formatted.
-- Do **not** provide SQL queries.
 - Only output the MongoDB query or pipeline with no additional text or explanations.
-- Do **not** include any code snippets or formatting, just the pure query object.
 
-**Examples:**
+**Example:**
 
 **User Query:**
-What is the win rate of the Lakers?
+How well do favorites perform in close games?
 
 **MongoDB Aggregation Pipeline:**
 [
-  {{"$match": {{"$or": [{{"teams.home.name": "Lakers"}}, {{"teams.away.name": "Lakers"}}]}}}},
-  {{"$group": {{"_id": null, "total_games": {{"$sum": 1}},
-               "wins": {{"$sum": {{"$cond": [{{"$eq": ["$result.winner", "Lakers"]}}, 1, 0]}}}}}}}},
-  {{"$project": {{"_id": 0, "win_rate": {{"$multiply": [{{"$divide": ["$wins", "$total_games"]}}, 100]}},
-                  "total_games": 1, "wins": 1}}}}
+  {{"$match": {{"status": "Final"}}}},
+  {{"$project": {{
+    "favorite": {{"$cond": [
+      {{"$lt": ["$teams.home.moneyline", "$teams.away.moneyline"]}},
+      "$teams.home.name",
+      "$teams.away.name"
+    ]}},
+    "favorite_won": {{"$eq": ["$result.winner", {{"$cond": [
+      {{"$lt": ["$teams.home.moneyline", "$teams.away.moneyline"]}},
+      "$teams.home.name",
+      "$teams.away.name"
+    ]}}}},
+    "close_game": true
+  }}}},
+  {{"$group": {{
+    "_id": null,
+    "total_games": {{"$sum": 1}},
+    "favorite_wins": {{"$sum": {{"$cond": ["$favorite_won", 1, 0]}}}}
+  }}}},
+  {{"$project": {{
+    "_id": 0,
+    "analysis": "Performance of Favorites",
+    "total_games_analyzed": "$total_games",
+    "games_won_by_favorites": "$favorite_wins",
+    "favorite_success_rate": {{"$multiply": [{{"$divide": ["$favorite_wins", "$total_games"]}}, 100]}}
+  }}}}
 ]
-
----
 
 Now convert the following user query into a MongoDB query or aggregation pipeline:
 

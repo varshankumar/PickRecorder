@@ -169,28 +169,33 @@ def process_and_store_odds(odds_data, sport_key):
 def get_league_name(sport_key):
     """
     Returns the league name based on the sport key.
-
-    :param sport_key: Sport identifier
-    :return: League name
     """
     league_mapping = {
         'basketball_nba': 'NBA',
-        'americanfootball_nfl': 'NFL'
+        'americanfootball_nfl': 'NFL',
+        'basketball_ncaab': 'NCAAB',
+        'americanfootball_ncaaf': 'College Football',
+        'icehockey_nhl': 'NHL'
     }
     return league_mapping.get(sport_key, 'Unknown')
 
 # --------------------- Main Execution Flow ---------------------
 def main():
-    sports_to_fetch = ['basketball_nba', 'americanfootball_nfl']
+    sports_to_fetch = [
+        'basketball_nba',
+        'americanfootball_nfl',
+        'basketball_ncaab',
+        'americanfootball_ncaaf',
+        'icehockey_nhl'
+    ]
 
-    for sport_key in SPORTS.keys():
+    for sport_key in sports_to_fetch:
         odds_data = fetch_moneyline_odds(sport_key)
         if odds_data:
             process_and_store_odds(odds_data, sport_key)
         else:
             logger.warning(f"No odds data fetched for sport: {SPORTS[sport_key]}")
 
-    # Close MongoDB connection
     client.close()
     logger.info("MongoDB connection closed.")
 

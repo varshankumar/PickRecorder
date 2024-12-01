@@ -35,7 +35,7 @@
                         </div>
                         <p class="card-text text-center mt-2">
                             Win Rate: {{ "%.1f"|format(favored_win_rate) }}%<br>
-                            Games: {{ total_favored_games }}
+                            Completed Games: {{ total_completed_favored_games }}
                         </p>
                     </div>
                 </div>
@@ -51,7 +51,7 @@
                         </div>
                         <p class="card-text text-center mt-2">
                             Win Rate: {{ "%.1f"|format(underdog_win_rate) }}%<br>
-                            Games: {{ total_underdog_games }}
+                            Completed Games: {{ total_completed_underdog_games }}
                         </p>
                     </div>
                 </div>
@@ -66,8 +66,8 @@
                     labels: ['Wins', 'Losses'],
                     datasets: [{
                         data: [
-                            {{ (favored_win_rate * total_favored_games / 100)|round|int }},
-                            {{ total_favored_games - (favored_win_rate * total_favored_games / 100)|round|int }}
+                            {{ favored_wins }},
+                            {{ total_completed_favored_games - favored_wins }}
                         ],
                         backgroundColor: ['#198754', '#dc3545']
                     }]
@@ -89,8 +89,8 @@
                     labels: ['Wins', 'Losses'],
                     datasets: [{
                         data: [
-                            {{ (underdog_win_rate * total_underdog_games / 100)|round|int }},
-                            {{ total_underdog_games - (underdog_win_rate * total_underdog_games / 100)|round|int }}
+                            {{ underdog_wins }},
+                            {{ total_completed_underdog_games - underdog_wins }}
                         ],
                         backgroundColor: ['#198754', '#dc3545']
                     }]

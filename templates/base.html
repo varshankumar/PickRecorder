@@ -47,6 +47,17 @@
             border-color: #86b7fe;
             box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
         }
+        /* Add this to your existing styles */
+        .alpha-badge {
+            font-size: 0.6em;
+            padding: 2px 5px;
+            background-color: #ff4081;
+            color: white;
+            border-radius: 3px;
+            position: relative;
+            top: -10px;
+            margin-left: 5px;
+        }
     </style>
     
     <script>
@@ -72,7 +83,10 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('index') }}">PickRecorder</a>
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                PickRecorder
+                <span class="alpha-badge">ALPHA</span>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
