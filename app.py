@@ -224,15 +224,15 @@ def format_datetime(value, timezone=None):
 @login_required
 def index():
     try:
-        # Get user's timezone from session
         timezone = session.get('timezone', 'UTC')
         user_tz = pytz.timezone(timezone)
-        
-        # Get current time in user's timezone
         now_user_tz = datetime.now(user_tz)
         
         page = int(request.args.get('page', 1))
-        selected_sports = request.args.getlist('sports') or ['NBA', 'NFL', 'NCAAB', 'NCAAF', 'NHL']
+        # Change this line to only default to NBA if no sports are explicitly selected
+        selected_sports = request.args.getlist('sports')
+        if not selected_sports:  # If no sports are selected in the URL
+            selected_sports = ['NBA']  # Default to NBA only
         
         games_today, total_games = fetch_games(
             target_date=now_user_tz, 
