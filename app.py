@@ -10,6 +10,7 @@ import os
 import google.generativeai as genai
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from models import User
+from config import SPORTS
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
@@ -75,21 +76,10 @@ def fetch_games(target_date, timezone=None, page=1, per_page=10, sports=None):
         distinct_sports = moneylines_collection.distinct('sport')
         logger.info(f"Available sports in database: {distinct_sports}")
         
-        # Add sport filter if specified (using correct database format)
+        # Add sport filter if specified (using config SPORTS mapping)
         if sports and isinstance(sports, list):
-            sport_mapping = {
-                'NBA': 'Basketball NBA',
-                'NFL': 'American Football NFL',
-                'NCAAB': 'Basketball NCAA',
-                'NCAAF': 'American Football NCAA',
-                'NHL': 'Ice Hockey NHL',
-                'Basketball NBA': 'Basketball NBA',
-                'American Football NFL': 'American Football NFL',
-                'Basketball NCAA': 'Basketball NCAA',
-                'American Football NCAA': 'American Football NCAA',
-                'Ice Hockey NHL': 'Ice Hockey NHL'
-            }
-            mapped_sports = [sport_mapping[s] for s in sports if s in sport_mapping]
+            # Use the values from SPORTS mapping directly
+            mapped_sports = [sport for sport in sports if sport in SPORTS.values()]
             if mapped_sports:
                 query['sport'] = {'$in': mapped_sports}
         
@@ -234,6 +224,11 @@ def index():
         if not selected_sports:  # If no sports are selected in the URL
             selected_sports = ['NBA']  # Default to NBA only
         
+        # Validate selected sports against config SPORTS values
+        selected_sports = [sport for sport in selected_sports if sport in SPORTS.values()]
+        if not selected_sports:
+            selected_sports = ['NBA']
+            
         games_today, total_games = fetch_games(
             target_date=now_user_tz, 
             timezone=timezone, 
@@ -265,8 +260,15 @@ def tomorrow():
         
         page = int(request.args.get('page', 1))
         # Changed to default to NBA only if no sport is selected
-        selected_sports = request.args.getlist('sports') or ['NBA']
-        
+        selected_sports = request.args.getlist('sports')
+        if not selected_sports:
+            selected_sports = ['NBA']
+            
+        # Validate selected sports against config SPORTS values
+        selected_sports = [sport for sport in selected_sports if sport in SPORTS.values()]
+        if not selected_sports:
+            selected_sports = ['NBA']
+            
         games_next_day, total_games = fetch_games(
             target_date=next_day_date,
             timezone=timezone,
@@ -297,7 +299,15 @@ def yesterday():  # Changed from 'previous_games' to 'yesterday'
         previous_day_date = now - timedelta(days=1)
         
         page = int(request.args.get('page', 1))
-        selected_sports = request.args.getlist('sports') or ['NBA', 'NFL', 'NCAAB', 'NCAAF', 'NHL']
+        # Change to match today/tomorrow default behavior
+        selected_sports = request.args.getlist('sports')
+        if not selected_sports:  # If no sports are selected in the URL
+            selected_sports = ['NBA']  # Default to NBA only
+        
+        # Validate selected sports against config SPORTS values
+        selected_sports = [sport for sport in selected_sports if sport in SPORTS.values()]
+        if not selected_sports:
+            selected_sports = ['NBA']
         
         games_previous_day, total_games = fetch_games(
             target_date=previous_day_date,

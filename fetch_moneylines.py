@@ -170,24 +170,11 @@ def get_league_name(sport_key):
     """
     Returns the league name based on the sport key.
     """
-    league_mapping = {
-        'basketball_nba': 'NBA',
-        'americanfootball_nfl': 'NFL',
-        'basketball_ncaab': 'NCAAB',
-        'americanfootball_ncaaf': 'College Football',
-        'icehockey_nhl': 'NHL'
-    }
-    return league_mapping.get(sport_key, 'Unknown')
+    return SPORTS.get(sport_key, 'Unknown')
 
 # --------------------- Main Execution Flow ---------------------
 def main():
-    sports_to_fetch = [
-        'basketball_nba',
-        'americanfootball_nfl',
-        'basketball_ncaab',
-        'americanfootball_ncaaf',
-        'icehockey_nhl'
-    ]
+    sports_to_fetch = list(SPORTS.keys())
 
     for sport_key in sports_to_fetch:
         odds_data = fetch_moneyline_odds(sport_key)

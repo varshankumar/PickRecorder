@@ -29,3 +29,5 @@ REGION = 'us'         # Can be 'us', 'uk', 'eu', 'au'
 MARKET = 'h2h'        # Moneyline
 ODDS_FORMAT = 'american'  # or 'decimal'
 DATE_FORMAT = 'iso'        # or 'unix'
+
+# Remove LEAGUES mapping as it's redundant
