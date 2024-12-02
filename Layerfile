@@ -20,6 +20,9 @@ SECRET ENV ODDS_API_KEY
 SECRET ENV GEMINI_KEY
 SECRET ENV SECRET_KEY
 
-# Start the Flask application
+# Start the Flask application with HTTPS
 RUN BACKGROUND python3 app.py
-EXPOSE WEBSITE http://localhost:5000
+EXPOSE WEBSITE https://localhost:443
+
+# Explicitly allow HTTPS traffic
+EXPOSE HTTPS PORT 443
