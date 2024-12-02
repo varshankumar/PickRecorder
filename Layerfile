@@ -6,9 +6,9 @@ RUN apt-get update && apt-get install -y python3 python3-pip
 # Upgrade pip to latest version
 RUN pip3 install --upgrade pip
 
-# Install required Python packages
-RUN pip3 install flask pymongo python-dotenv pytz flask-login
-RUN pip3 install google-generativeai==0.3.1
+# Install dependencies from requirements.txt
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
 
 # Copy repository contents to /root
 COPY . .
