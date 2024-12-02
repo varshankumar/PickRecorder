@@ -9,7 +9,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Install dependencies from requirements.txt
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 # Copy repository contents to /root
 COPY . .
@@ -20,9 +20,6 @@ SECRET ENV ODDS_API_KEY
 SECRET ENV GEMINI_KEY
 SECRET ENV SECRET_KEY
 
-# Start the Flask application with HTTPS
+# Start the Flask application
 RUN BACKGROUND python3 app.py
-EXPOSE WEBSITE https://localhost:443
-
-# Explicitly allow HTTPS traffic
-EXPOSE HTTPS PORT 443
+EXPOSE WEBSITE https://localhost:5000
