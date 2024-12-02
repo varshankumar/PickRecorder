@@ -20,6 +20,8 @@ SECRET ENV ODDS_API_KEY
 SECRET ENV GEMINI_KEY
 SECRET ENV SECRET_KEY
 
-# Start the Flask application
-RUN BACKGROUND python3 app.py
-EXPOSE WEBSITE https://localhost:5000
+# Start the application with Gunicorn
+RUN BACKGROUND gunicorn --bind 0.0.0.0:5000 wsgi:app
+
+# Use standard port exposure
+EXPOSE WEBSITE http://localhost:5000
