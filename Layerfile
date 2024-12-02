@@ -1,0 +1,17 @@
+FROM vm/ubuntu:18.04
+
+# Install python
+RUN apt-get update && apt-get install -y python3
+
+# Copy repository contents to /root
+COPY . .
+
+# Set up environment variables
+SECRET ENV MONGO_URI
+SECRET ENV ODDS_API_KEY
+SECRET ENV GEMINI_KEY
+SECRET ENV SECRET_KEY
+
+# Start the Python web server
+RUN BACKGROUND python3 -m http.server 80
+EXPOSE WEBSITE http://localhost:80
