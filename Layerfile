@@ -20,8 +20,8 @@ SECRET ENV ODDS_API_KEY
 SECRET ENV GEMINI_KEY
 SECRET ENV SECRET_KEY
 
-# Start the application with Gunicorn
-RUN BACKGROUND gunicorn --bind 0.0.0.0:5000 wsgi:app
+# Start the application with Gunicorn (HTTP only)
+RUN BACKGROUND gunicorn --bind 0.0.0.0:80 wsgi:app
 
-# Use standard port exposure
-EXPOSE WEBSITE http://localhost:5000
+# Expose HTTP port
+EXPOSE WEBSITE http://localhost:80
