@@ -1,7 +1,10 @@
 FROM vm/ubuntu:18.04
 
-# Install python
-RUN apt-get update && apt-get install -y python3
+# Install Python and pip
+RUN apt-get update && apt-get install -y python3 python3-pip
+
+# Install required Python packages
+RUN pip3 install flask pymongo python-dotenv pytz google-generativeai flask-login
 
 # Copy repository contents to /root
 COPY . .
@@ -12,6 +15,6 @@ SECRET ENV ODDS_API_KEY
 SECRET ENV GEMINI_KEY
 SECRET ENV SECRET_KEY
 
-# Start the Python web server
-RUN BACKGROUND python3 -m http.server 80
-EXPOSE WEBSITE http://localhost:80
+# Start the Flask application
+RUN BACKGROUND python3 app.py
+EXPOSE WEBSITE http://localhost:5000
