@@ -59,8 +59,24 @@
         </div>
 
         <h2>Statistics for {{ selected_team }}</h2>
-        <p>Favored %: {{ '%.2f'|format(favored_win_rate) }}%</p>
-        <p>Underdog %: {{ '%.2f'|format(underdog_win_rate) }}%</p>
+        {% if total_completed_favored_games > 0 %}
+            {% set red = (255 - (favored_win_rate * 2.55))|int %}
+            {% set green = (favored_win_rate * 2.55)|int %}
+            <p style="color: rgb({{ red }}, {{ green }}, 0);">
+                Favored %: {{ '%.2f'|format(favored_win_rate) }}%
+            </p>
+        {% else %}
+            <p>Favored %: N/A</p>
+        {% endif %}
+        {% if total_completed_underdog_games > 0 %}
+            {% set red = (255 - (underdog_win_rate * 2.55))|int %}
+            {% set green = (underdog_win_rate * 2.55)|int %}
+            <p style="color: rgb({{ red }}, {{ green }}, 0);">
+                Underdog %: {{ '%.2f'|format(underdog_win_rate) }}%
+            </p>
+        {% else %}
+            <p>Underdog %: N/A</p>
+        {% endif %}
 
         <script>
             // Favored games chart

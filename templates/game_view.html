@@ -21,8 +21,34 @@
                             <a href="{{ url_for('team_stats', team=game.away_team) }}" class="text-decoration-none">
                                 {{ game.away_team }}
                             </a>
-                            <span class="badge bg-secondary ms-2 mt-1">Favored %: {{ '%.1f'|format(game.away_team_stats.favored_win_rate) }}%</span>
-                            <span class="badge bg-secondary ms-2 mt-1">Underdog %: {{ '%.1f'|format(game.away_team_stats.underdog_win_rate) }}%</span>
+                            {% set favored_games = game.away_team_stats.total_completed_favored_games %}
+                            {% set favored_rate = game.away_team_stats.favored_win_rate %}
+                            {% if favored_games > 0 %}
+                                {% set red = (255 - (favored_rate * 2.55))|int %}
+                                {% set green = (favored_rate * 2.55)|int %}
+                                <span class="badge ms-2 mt-1"
+                                      style="background-color: rgb({{ red }}, {{ green }}, 0);">
+                                    Favored %: {{ '%.1f'|format(favored_rate) }}%
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary ms-2 mt-1">
+                                    Favored %: N/A
+                                </span>
+                            {% endif %}
+                            {% set underdog_games = game.away_team_stats.total_completed_underdog_games %}
+                            {% set underdog_rate = game.away_team_stats.underdog_win_rate %}
+                            {% if underdog_games > 0 %}
+                                {% set red = (255 - (underdog_rate * 2.55))|int %}
+                                {% set green = (underdog_rate * 2.55)|int %}
+                                <span class="badge ms-2 mt-1"
+                                      style="background-color: rgb({{ red }}, {{ green }}, 0);">
+                                    Underdog %: {{ '%.1f'|format(underdog_rate) }}%
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary ms-2 mt-1">
+                                    Underdog %: N/A
+                                </span>
+                            {% endif %}
                         </div>
                     </td>
                     <td>{{ game.away_moneyline }}</td>
@@ -37,8 +63,34 @@
                             <a href="{{ url_for('team_stats', team=game.home_team) }}" class="text-decoration-none">
                                 {{ game.home_team }}
                             </a>
-                            <span class="badge bg-secondary ms-2 mt-1">Favored %: {{ '%.1f'|format(game.home_team_stats.favored_win_rate) }}%</span>
-                            <span class="badge bg-secondary ms-2 mt-1">Underdog %: {{ '%.1f'|format(game.home_team_stats.underdog_win_rate) }}%</span>
+                            {% set favored_games = game.home_team_stats.total_completed_favored_games %}
+                            {% set favored_rate = game.home_team_stats.favored_win_rate %}
+                            {% if favored_games > 0 %}
+                                {% set red = (255 - (favored_rate * 2.55))|int %}
+                                {% set green = (favored_rate * 2.55)|int %}
+                                <span class="badge ms-2 mt-1"
+                                      style="background-color: rgb({{ red }}, {{ green }}, 0);">
+                                    Favored %: {{ '%.1f'|format(favored_rate) }}%
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary ms-2 mt-1">
+                                    Favored %: N/A
+                                </span>
+                            {% endif %}
+                            {% set underdog_games = game.home_team_stats.total_completed_underdog_games %}
+                            {% set underdog_rate = game.home_team_stats.underdog_win_rate %}
+                            {% if underdog_games > 0 %}
+                                {% set red = (255 - (underdog_rate * 2.55))|int %}
+                                {% set green = (underdog_rate * 2.55)|int %}
+                                <span class="badge ms-2 mt-1"
+                                      style="background-color: rgb({{ red }}, {{ green }}, 0);">
+                                    Underdog %: {{ '%.1f'|format(underdog_rate) }}%
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary ms-2 mt-1">
+                                    Underdog %: N/A
+                                </span>
+                            {% endif %}
                         </div>
                     </td>
                     <td>{{ game.home_moneyline }}</td>
