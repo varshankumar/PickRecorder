@@ -144,18 +144,24 @@ def get_team_stats(team):
         logger.error(f"Error calculating team stats for {team}: {e}", exc_info=True)
         return {'favored_win_rate': 0, 'underdog_win_rate': 0}
 
-def calculate_win_stats(team):
+def calculate_win_stats(team, up_to_date=None):
     try:
         team = team.strip().lower()
-        logger.info(f"Calculating win stats for team: {team}")
+        logger.info(f"Calculating win stats for team: {team} up to date: {up_to_date}")
         
-        # Fetch completed games where the team participated
+        # Prepare the date filter if a date is provided
+        date_filter = {'$lte': up_to_date} if up_to_date else {}
+        
+        # Fetch completed games where the team participated and before the specified date
         completed_games = list(moneylines_collection.find({
-            '$or': [
-                {'teams.home.name': {'$regex': f'^{team}$', '$options': 'i'}},
-                {'teams.away.name': {'$regex': f'^{team}$', '$options': 'i'}}
-            ],
-            'status': 'Completed'
+            '$and': [
+                {'$or': [
+                    {'teams.home.name': {'$regex': f'^{team}$', '$options': 'i'}},
+                    {'teams.away.name': {'$regex': f'^{team}$', '$options': 'i'}}
+                ]},
+                {'status': 'Completed'},
+                {'event_date': date_filter} if up_to_date else {}
+            ]
         }))
         
         underdog_wins = 0
@@ -317,8 +323,8 @@ def fetch_games(target_date, timezone=None, page=1, per_page=10, sports=None):
             home_team = game.get('teams', {}).get('home', {}).get('name', 'Unknown')
             away_team = game.get('teams', {}).get('away', {}).get('name', 'Unknown')
             # Fetch win stats for home and away teams
-            home_team_stats = calculate_win_stats(home_team)
-            away_team_stats = calculate_win_stats(away_team)
+            home_team_stats = calculate_win_stats(home_team, up_to_date=event_date_utc)
+            away_team_stats = calculate_win_stats(away_team, up_to_date=event_date_utc)
 
             games.append({
                 'event_date': event_date_local,
@@ -379,6 +385,10 @@ def fetch_team_games(team, page=1, per_page=20):
             away_team = game.get('teams', {}).get('away', {}).get('name', 'Unknown')
             home_team_stats = get_team_stats(home_team) if game.get('status') == 'In Progress' else None
             away_team_stats = get_team_stats(away_team) if game.get('status') == 'In Progress' else None
+
+            # Fetch win stats as of the game date
+            home_team_stats = calculate_win_stats(home_team, up_to_date=event_date_utc)
+            away_team_stats = calculate_win_stats(away_team, up_to_date=event_date_utc)
 
             games.append({
                 'event_date': event_date_local,

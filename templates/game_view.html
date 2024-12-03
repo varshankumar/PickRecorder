@@ -21,13 +21,8 @@
                             <a href="{{ url_for('team_stats', team=game.away_team) }}" class="text-decoration-none">
                                 {{ game.away_team }}
                             </a>
-                            {% if game.status == 'In Progress' %}
-                                {% if game.away_moneyline < game.home_moneyline %}
-                                    <span class="badge bg-success ms-2">{{ '%.0f'|format(game.away_team_stats.favored_win_rate|default(0)) }}%</span>
-                                {% else %}
-                                    <span class="badge bg-primary ms-2">{{ '%.0f'|format(game.away_team_stats.underdog_win_rate|default(0)) }}%</span>
-                                {% endif %}
-                            {% endif %}
+                            <span class="badge bg-secondary ms-2">Favored Win%: {{ '%.1f'|format(game.away_team_stats.favored_win_rate) }}%</span>
+                            <span class="badge bg-secondary ms-2">Underdog Win%: {{ '%.1f'|format(game.away_team_stats.underdog_win_rate) }}%</span>
                         </div>
                     </td>
                     <td>{{ game.away_moneyline }}</td>
@@ -42,13 +37,8 @@
                             <a href="{{ url_for('team_stats', team=game.home_team) }}" class="text-decoration-none">
                                 {{ game.home_team }}
                             </a>
-                            {% if game.status == 'In Progress' %}
-                                {% if game.home_moneyline < game.away_moneyline %}
-                                    <span class="badge bg-success ms-2">{{ '%.0f'|format(game.home_team_stats.favored_win_rate|default(0)) }}%</span>
-                                {% else %}
-                                    <span class="badge bg-primary ms-2">{{ '%.0f'|format(game.home_team_stats.underdog_win_rate|default(0)) }}%</span>
-                                {% endif %}
-                            {% endif %}
+                            <span class="badge bg-secondary ms-2">Favored Win%: {{ '%.1f'|format(game.home_team_stats.favored_win_rate) }}%</span>
+                            <span class="badge bg-secondary ms-2">Underdog Win%: {{ '%.1f'|format(game.home_team_stats.underdog_win_rate) }}%</span>
                         </div>
                     </td>
                     <td>{{ game.home_moneyline }}</td>
