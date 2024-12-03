@@ -58,6 +58,10 @@
             </div>
         </div>
 
+        <h2>Statistics for {{ selected_team }}</h2>
+        <p>Favored Win Rate: {{ '%.2f'|format(favored_win_rate) }}%</p>
+        <p>Underdog Win Rate: {{ '%.2f'|format(underdog_win_rate) }}%</p>
+
         <script>
             // Favored games chart
             new Chart(document.getElementById('favoredChart'), {

@@ -50,6 +50,205 @@ except Exception as e:
 query_generator = MongoQueryGenerator(os.getenv('GEMINI_KEY'))
 
 # --------------------- Helper Functions ---------------------
+def get_team_stats(team):
+    try:
+        team = team.strip().lower()
+        logger.info(f"Calculating stats for team: {team}")
+        
+        # Fetch completed games where the team participated
+        completed_games = list(moneylines_collection.find({
+            '$or': [
+                {'teams.home.name': {'$regex': f'^{team}$', '$options': 'i'}},
+                {'teams.away.name': {'$regex': f'^{team}$', '$options': 'i'}}
+            ],
+            'status': 'Completed'
+        }))
+        
+        logger.info(f"Found {len(completed_games)} completed games for {team}")
+        
+        # Initialize counters
+        favored_wins = 0
+        underdog_wins = 0
+        total_favored = 0
+        total_underdog = 0
+        
+        # Process each game
+        for game in completed_games:
+            home_team = game.get('teams', {}).get('home', {}).get('name', '').strip()
+            away_team = game.get('teams', {}).get('away', {}).get('name', '').strip()
+            home_ml = game.get('teams', {}).get('home', {}).get('moneyline')
+            away_ml = game.get('teams', {}).get('away', {}).get('moneyline')
+            winner = game.get('result', {}).get('winner', '').strip()
+            
+            # Normalize team names
+            home_team_lower = home_team.lower()
+            away_team_lower = away_team.lower()
+            winner_lower = winner.lower()
+            
+            # Ensure moneyline values are numbers
+            try:
+                home_ml = float(home_ml)
+            except (TypeError, ValueError):
+                home_ml = None
+            try:
+                away_ml = float(away_ml)
+            except (TypeError, ValueError):
+                away_ml = None
+            
+            # Skip game if moneylines are missing or invalid
+            if home_ml is None or away_ml is None:
+                logger.warning(f"Skipping game due to invalid moneylines: {home_team} vs {away_team}")
+                continue
+            
+            # Determine if the team is home or away
+            if home_team_lower == team:
+                is_home = True
+            elif away_team_lower == team:
+                is_home = False
+            else:
+                logger.warning(f"{team} not found in game teams: {home_team} vs {away_team}")
+                continue
+            
+            team_ml = home_ml if is_home else away_ml
+            opp_ml = away_ml if is_home else home_ml
+            
+            # Compare moneylines to determine if team was favored or underdog
+            if team_ml < opp_ml:
+                total_favored += 1
+                if winner_lower == team:
+                    favored_wins += 1
+                logger.info(f"{team} was favored - Result: {'Win' if winner_lower == team else 'Loss'}")
+            elif team_ml > opp_ml:
+                total_underdog += 1
+                if winner_lower == team:
+                    underdog_wins += 1
+                logger.info(f"{team} was underdog - Result: {'Win' if winner_lower == team else 'Loss'}")
+            else:
+                # Moneylines are equal, skip or count as neither favored nor underdog
+                logger.info(f"{team} had equal moneyline with opponent - Skipping this game")
+        
+        # Log final counts
+        logger.info(f"Favored wins: {favored_wins} out of {total_favored}")
+        logger.info(f"Underdog wins: {underdog_wins} out of {total_underdog}")
+        
+        # Calculate percentages, avoid division by zero
+        stats = {
+            'favored_win_rate': (favored_wins / total_favored * 100) if total_favored > 0 else 0,
+            'underdog_win_rate': (underdog_wins / total_underdog * 100) if total_underdog > 0 else 0
+        }
+        
+        logger.info(f"Calculated stats for {team}: {stats}")
+        return stats
+        
+    except Exception as e:
+        logger.error(f"Error calculating team stats for {team}: {e}", exc_info=True)
+        return {'favored_win_rate': 0, 'underdog_win_rate': 0}
+
+def calculate_win_stats(team):
+    try:
+        team = team.strip().lower()
+        logger.info(f"Calculating win stats for team: {team}")
+        
+        # Fetch completed games where the team participated
+        completed_games = list(moneylines_collection.find({
+            '$or': [
+                {'teams.home.name': {'$regex': f'^{team}$', '$options': 'i'}},
+                {'teams.away.name': {'$regex': f'^{team}$', '$options': 'i'}}
+            ],
+            'status': 'Completed'
+        }))
+        
+        underdog_wins = 0
+        favored_wins = 0
+        total_completed_underdog_games = 0
+        total_completed_favored_games = 0
+        total_underdog_games = 0
+        total_favored_games = 0
+
+        for game in completed_games:
+            home_team = game.get('teams', {}).get('home', {}).get('name', '').strip()
+            away_team = game.get('teams', {}).get('away', {}).get('name', '').strip()
+            home_moneyline = game.get('teams', {}).get('home', {}).get('moneyline')
+            away_moneyline = game.get('teams', {}).get('away', {}).get('moneyline')
+            winner = game.get('result', {}).get('winner', '').strip()
+
+            # Normalize team names
+            home_team_lower = home_team.lower()
+            away_team_lower = away_team.lower()
+            winner_lower = winner.lower()
+
+            # Ensure moneyline values are numbers
+            try:
+                home_moneyline = float(home_moneyline)
+            except (TypeError, ValueError):
+                home_moneyline = None
+            try:
+                away_moneyline = float(away_moneyline)
+            except (TypeError, ValueError):
+                away_moneyline = None
+
+            # Skip game if moneylines are missing or invalid
+            if home_moneyline is None or away_moneyline is None:
+                logger.warning(f"Skipping game due to invalid moneylines: {home_team} vs {away_team}")
+                continue
+
+            # Determine if team is home or away
+            if home_team_lower == team:
+                is_home = True
+            elif away_team_lower == team:
+                is_home = False
+            else:
+                logger.warning(f"{team} not found in game teams: {home_team} vs {away_team}")
+                continue
+
+            team_ml = home_moneyline if is_home else away_moneyline
+            opp_ml = away_moneyline if is_home else home_moneyline
+
+            # Compare moneylines to determine if team was favored or underdog
+            if team_ml < opp_ml:
+                total_favored_games += 1
+                total_completed_favored_games += 1
+                if winner_lower == team:
+                    favored_wins += 1
+            elif team_ml > opp_ml:
+                total_underdog_games += 1
+                total_completed_underdog_games += 1
+                if winner_lower == team:
+                    underdog_wins += 1
+            else:
+                logger.info(f"{team} had equal moneyline with opponent - Skipping this game")
+
+        # Calculate win rates
+        underdog_win_rate = (underdog_wins / total_completed_underdog_games * 100) if total_completed_underdog_games > 0 else 0
+        favored_win_rate = (favored_wins / total_completed_favored_games * 100) if total_completed_favored_games > 0 else 0
+
+        stats = {
+            'underdog_win_rate': underdog_win_rate,
+            'favored_win_rate': favored_win_rate,
+            'underdog_wins': underdog_wins,
+            'favored_wins': favored_wins,
+            'total_completed_underdog_games': total_completed_underdog_games,
+            'total_completed_favored_games': total_completed_favored_games,
+            'total_underdog_games': total_underdog_games,
+            'total_favored_games': total_favored_games
+        }
+
+        logger.info(f"Calculated win stats for {team}: {stats}")
+        return stats
+
+    except Exception as e:
+        logger.error(f"Error in calculate_win_stats for {team}: {e}", exc_info=True)
+        return {
+            'underdog_win_rate': 0,
+            'favored_win_rate': 0,
+            'underdog_wins': 0,
+            'favored_wins': 0,
+            'total_completed_underdog_games': 0,
+            'total_completed_favored_games': 0,
+            'total_underdog_games': 0,
+            'total_favored_games': 0
+        }
+
 def fetch_games(target_date, timezone=None, page=1, per_page=10, sports=None):
     try:
         timezone = timezone or session.get('timezone', 'UTC')
@@ -106,6 +305,21 @@ def fetch_games(target_date, timezone=None, page=1, per_page=10, sports=None):
                 event_date_utc = pytz.utc.localize(event_date_utc)
             event_date_local = event_date_utc.astimezone(user_timezone)
 
+            # Add team stats for in-progress games
+            home_team_stats = None
+            away_team_stats = None
+            if game.get('status') == 'In Progress':
+                home_team = game.get('teams', {}).get('home', {}).get('name')
+                away_team = game.get('teams', {}).get('away', {}).get('name')
+                home_team_stats = get_team_stats(home_team)
+                away_team_stats = get_team_stats(away_team)
+
+            home_team = game.get('teams', {}).get('home', {}).get('name', 'Unknown')
+            away_team = game.get('teams', {}).get('away', {}).get('name', 'Unknown')
+            # Fetch win stats for home and away teams
+            home_team_stats = calculate_win_stats(home_team)
+            away_team_stats = calculate_win_stats(away_team)
+
             games.append({
                 'event_date': event_date_local,
                 'home_team': game.get('teams', {}).get('home', {}).get('name', 'Unknown'),
@@ -117,7 +331,9 @@ def fetch_games(target_date, timezone=None, page=1, per_page=10, sports=None):
                 'result': {  # Add scores to the game data
                     'home_score': game.get('result', {}).get('home_score', 'N/A'),
                     'away_score': game.get('result', {}).get('away_score', 'N/A')
-                }
+                },
+                'home_team_stats': home_team_stats,
+                'away_team_stats': away_team_stats
             })
 
         games = sorted(games, key=lambda x: x['event_date'])
@@ -158,18 +374,26 @@ def fetch_team_games(team, page=1, per_page=20):
                 event_date_utc = pytz.utc.localize(event_date_utc)
             event_date_local = event_date_utc.astimezone(user_timezone)
 
+            # Add team stats for in-progress games
+            home_team = game.get('teams', {}).get('home', {}).get('name', 'Unknown')
+            away_team = game.get('teams', {}).get('away', {}).get('name', 'Unknown')
+            home_team_stats = get_team_stats(home_team) if game.get('status') == 'In Progress' else None
+            away_team_stats = get_team_stats(away_team) if game.get('status') == 'In Progress' else None
+
             games.append({
                 'event_date': event_date_local,
-                'home_team': game.get('teams', {}).get('home', {}).get('name', 'Unknown'),
+                'home_team': home_team,
                 'home_moneyline': game.get('teams', {}).get('home', {}).get('moneyline', 'N/A'),
-                'away_team': game.get('teams', {}).get('away', {}).get('name', 'Unknown'),
+                'away_team': away_team,
                 'away_moneyline': game.get('teams', {}).get('away', {}).get('moneyline', 'N/A'),
                 'winner': game.get('result', {}).get('winner', 'N/A'),
                 'status': game.get('status', 'In Progress'),
                 'result': {  # Add scores to the game data
                     'home_score': game.get('result', {}).get('home_score', 'N/A'),
                     'away_score': game.get('result', {}).get('away_score', 'N/A')
-                }
+                },
+                'home_team_stats': home_team_stats,
+                'away_team_stats': away_team_stats
             })
 
         return games, total_games
@@ -345,67 +569,30 @@ def team_stats():
         team = request.args.get('team')
         page = int(request.args.get('page', 1))
         per_page = 10
+
+        # Fetch games for the selected team
         games, total_games = fetch_team_games(team, page=page, per_page=per_page) if team else ([], 0)
 
-        # Calculate win statistics
-        underdog_wins = 0
-        favored_wins = 0
-        total_completed_underdog_games = 0
-        total_completed_favored_games = 0
-        total_underdog_games = 0
-        total_favored_games = 0
-
-        for game in games:
-            # Determine if team is favored, regardless of game status
-            if game['home_team'] == team:
-                is_favored = game['home_moneyline'] < game['away_moneyline']
-            else:
-                is_favored = game['away_moneyline'] < game['home_moneyline']
-
-            # Track total games
-            if is_favored:
-                total_favored_games += 1
-            else:
-                total_underdog_games += 1
-
-            # Skip games that aren't completed for win statistics
-            if game['status'] != 'Completed':
-                continue
-
-            # Track completed games and wins
-            if is_favored:
-                total_completed_favored_games += 1
-                if game['winner'] == team:
-                    favored_wins += 1
-            else:
-                total_completed_underdog_games += 1
-                if game['winner'] == team:
-                    underdog_wins += 1
-
-        # Calculate percentages based only on completed games
-        underdog_win_rate = (underdog_wins / total_completed_underdog_games * 100) if total_completed_underdog_games > 0 else 0
-        favored_win_rate = (favored_wins / total_completed_favored_games * 100) if total_completed_favored_games > 0 else 0
-
+        # Calculate total pages for pagination
         total_pages = (total_games + per_page - 1) // per_page
 
-        return render_template(
-            'team_stats.html',
-            games=games,
-            selected_team=team,
-            teams=get_unique_teams(),
-            page_title=f"Stats for {team}" if team else "Team Stats",
-            current_page=page,
-            total_pages=total_pages,
-            underdog_win_rate=underdog_win_rate,
-            favored_win_rate=favored_win_rate,
-            total_underdog_games=total_underdog_games,
-            total_favored_games=total_favored_games,
-            total_completed_underdog_games=total_completed_underdog_games,
-            total_completed_favored_games=total_completed_favored_games,
-            underdog_wins=underdog_wins,
-            favored_wins=favored_wins,
-            timezone=timezone
-        )
+        if team:
+            # Calculate win statistics
+            win_stats = calculate_win_stats(team)
+
+            return render_template(
+                'team_stats.html',
+                games=games,
+                selected_team=team,
+                teams=get_unique_teams(),
+                page_title=f"Stats for {team}",
+                current_page=page,
+                total_pages=total_pages,
+                timezone=timezone,
+                **win_stats  # Unpack the win_stats dictionary
+            )
+        else:
+            return render_template('team_stats.html', teams=get_unique_teams())
     except Exception as e:
         logger.error(f"Error in team_stats route: {e}")
         return render_template('error.html', message="An error occurred while fetching team stats.")
