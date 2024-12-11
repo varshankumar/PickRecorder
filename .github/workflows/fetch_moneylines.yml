@@ -3,7 +3,6 @@ name: Fetch Moneylines Daily
 on:
   schedule:
     - cron: '0 8 * * *'    # Runs daily at 12:00 AM PST
-    - cron: '0 20 * * *'   # Runs daily at 12:00 PM PST
   workflow_dispatch:  # Allows manual triggering
 
 jobs:
