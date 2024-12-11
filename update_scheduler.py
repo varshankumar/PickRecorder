@@ -17,7 +17,6 @@ logger.addHandler(ch)
 
 # Constants
 PST_TZ = pytz.timezone('America/Los_Angeles')
-UPDATE_DELAY_HOURS = 3
 
 # MongoDB Setup
 try:
