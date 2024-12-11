@@ -4,11 +4,8 @@ from pymongo import MongoClient
 from datetime import datetime, timedelta
 import pytz
 import logging
-import json  # Add this import
-from mongo_query_generator import MongoQueryGenerator
 import os
-import google.generativeai as genai
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_login import LoginManager, login_user, logout_user, login_required
 from models import User
 from config import SPORTS
 
@@ -46,8 +43,6 @@ try:
 except Exception as e:
     logger.error(f"Failed to connect to MongoDB: {e}")
     raise e
-
-query_generator = MongoQueryGenerator(os.getenv('GEMINI_KEY'))
 
 # --------------------- Helper Functions ---------------------
 def get_team_stats(team):
