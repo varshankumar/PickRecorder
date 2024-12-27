@@ -22,7 +22,7 @@ SPORTS = {
     'basketball_nba': 'NBA',
     'americanfootball_nfl': 'NFL',
     'basketball_ncaab': 'NCAAB',
-    'americanfootball_ncaaf': 'College Football',  # Changed from americanfootball_college
+    'americanfootball_ncaaf': 'NCAAF',  # Changed from americanfootball_college
     'icehockey_nhl': 'NHL'  # Changed from hockey_nhl
 }
 REGION = 'us'         # Can be 'us', 'uk', 'eu', 'au'
