@@ -47,7 +47,7 @@ def is_update_time():
             scheduled_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
             time_diff = abs((now - scheduled_time).total_seconds() / 60)
             
-            if time_diff <= 5:  # Within 5 minutes of scheduled time
+            if time_diff <= 30:  # Within 5 minutes of scheduled time
                 return True
         
         return False
