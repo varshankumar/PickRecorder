@@ -16,6 +16,12 @@ ODDS_API_KEY = os.getenv('ODDS_API_KEY')
 if not ODDS_API_KEY:
     raise EnvironmentError("ODDS_API_KEY not found in environment variables.")
 
+# Add Gemini API configuration
+GEMINI_API_KEY = os.getenv('GEMINI_KEY')  # Changed from GEMINI_API_KEY to GEMINI_KEY
+
+if not GEMINI_API_KEY:
+    raise EnvironmentError("GEMINI_API_KEY not found in environment variables.")
+
 # The Odds API endpoints and parameters
 API_BASE_URL = 'https://api.the-odds-api.com/v4/sports/'
 SPORTS = {

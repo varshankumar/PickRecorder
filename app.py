@@ -7,7 +7,7 @@ import logging
 import os
 from flask_login import LoginManager, login_user, logout_user, login_required
 from models import User
-from config import SPORTS
+from config import SPORTS, GEMINI_API_KEY
 from mongo_query_generator import MongoQueryGenerator
 
 app = Flask(__name__)
@@ -612,28 +612,25 @@ def search():
             if not natural_query:
                 return render_template('search.html', error="Please enter a query")
 
-            # Generate MongoDB query or aggregation pipeline
-            result = MongoQueryGenerator.generate_query(natural_query)
+            # Create query generator with API key
+            query_generator = MongoQueryGenerator(gemini_api_key=GEMINI_API_KEY)
+            result = query_generator.generate_query(prompt=natural_query)
             mongo_query = result['query']
             is_aggregation = result['is_aggregation']
 
             # Execute the query
             try:
                 if is_aggregation:
-                    # Execute aggregation pipeline
                     results = list(moneylines_collection.aggregate(mongo_query))
                 else:
-                    # Execute find query
                     results = list(moneylines_collection.find(mongo_query).limit(20))
             except Exception as e:
                 logger.error(f"Error executing MongoDB query: {e}")
                 logger.error(f"Generated Query: {mongo_query}")
                 return render_template('search.html', error="Invalid query generated. Please try a different search.")
 
-            # Log the results for debugging
             logger.info(f"Query results: {results}")
 
-            # Render the results
             return render_template(
                 'search.html',
                 results=results,
