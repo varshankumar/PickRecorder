@@ -8,6 +8,7 @@ import os
 from flask_login import LoginManager, login_user, logout_user, login_required
 from models import User
 from config import SPORTS
+from mongo_query_generator import MongoQueryGenerator
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
@@ -612,7 +613,7 @@ def search():
                 return render_template('search.html', error="Please enter a query")
 
             # Generate MongoDB query or aggregation pipeline
-            result = query_generator.generate_query(natural_query)
+            result = MongoQueryGenerator.generate_query(natural_query)
             mongo_query = result['query']
             is_aggregation = result['is_aggregation']
 
