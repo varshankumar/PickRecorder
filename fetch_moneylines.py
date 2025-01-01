@@ -174,9 +174,11 @@ def get_league_name(sport_key):
 
 # --------------------- Main Execution Flow ---------------------
 def main():
-    sports_to_fetch = list(SPORTS.keys())
+    # Get all configured sports, including MLB
+    sports_to_fetch = list(SPORTS.keys())  # Now includes 'baseball_mlb'
 
     for sport_key in sports_to_fetch:
+        logger.info(f"Fetching odds for {SPORTS[sport_key]}")
         odds_data = fetch_moneyline_odds(sport_key)
         if odds_data:
             process_and_store_odds(odds_data, sport_key)

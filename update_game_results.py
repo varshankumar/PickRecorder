@@ -81,14 +81,15 @@ def update_game_status():
             logger.info("No games with null results to update.")
             return
 
-        # Fetch scores for all sports
-        nba_scores = fetch_scores('basketball_nba')
-        nfl_scores = fetch_scores('americanfootball_nfl')
-        ncaab_scores = fetch_scores('basketball_ncaab')
-        ncaaf_scores = fetch_scores('americanfootball_ncaaf')
-        nhl_scores = fetch_scores('icehockey_nhl')
-        
-        all_scores = nba_scores + nfl_scores + ncaab_scores + ncaaf_scores + nhl_scores
+        # Fetch scores for all sports including MLB
+        all_scores = []
+        for sport_key in SPORTS.keys():
+            logger.info(f"Fetching scores for {SPORTS[sport_key]}")
+            scores = fetch_scores(sport_key)
+            if scores:
+                all_scores.extend(scores)
+            else:
+                logger.warning(f"No scores fetched for {SPORTS[sport_key]}")
 
         if not all_scores:
             logger.warning("No scores data fetched for any sport.")

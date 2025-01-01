@@ -23,7 +23,8 @@ SPORTS = {
     'americanfootball_nfl': 'NFL',
     'basketball_ncaab': 'NCAAB',
     'americanfootball_ncaaf': 'NCAAF',  # Changed from americanfootball_college
-    'icehockey_nhl': 'NHL'  # Changed from hockey_nhl
+    'icehockey_nhl': 'NHL',  # Changed from hockey_nhl
+    'baseball_mlb': 'MLB'  # Add MLB support
 }
 REGION = 'us'         # Can be 'us', 'uk', 'eu', 'au'
 MARKET = 'h2h'        # Moneyline
