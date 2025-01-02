@@ -25,12 +25,15 @@ jobs:
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # Add this line
         run: |
           echo "MONGO_URI=${MONGO_URI}" >> $GITHUB_ENV
           echo "ODDS_API_KEY=${ODDS_API_KEY}" >> $GITHUB_ENV
+          echo "GEMINI_API_KEY=${GEMINI_API_KEY}" >> $GITHUB_ENV  # Add this line
 
       - name: Run Fetch Moneylines Script
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # Add this line
         run: python update_game_results.py
