@@ -1,9 +1,7 @@
 import os
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime
 import pytz
-import pymongo
-from config import MONGO_URI
 import logging
 
 # --------------------- Logging Configuration ---------------------
@@ -18,15 +16,6 @@ logger.addHandler(ch)
 # Constants
 PST_TZ = pytz.timezone('America/Los_Angeles')
 
-# MongoDB Setup
-try:
-    client = pymongo.MongoClient(MONGO_URI)
-    db = client.sports_odds
-    moneylines_collection = db.moneylines
-    logger.info("Connected to MongoDB successfully.")
-except Exception as e:
-    logger.error(f"Failed to connect to MongoDB: {e}")
-    raise e
 
 # Update Constants
 PST_TZ = pytz.timezone('America/Los_Angeles')

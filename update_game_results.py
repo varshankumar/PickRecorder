@@ -10,9 +10,6 @@ from config import (
     ODDS_API_KEY,
     API_BASE_URL,
     SPORTS,
-    REGION,
-    MARKET,
-    ODDS_FORMAT,
     DATE_FORMAT
 )
 
