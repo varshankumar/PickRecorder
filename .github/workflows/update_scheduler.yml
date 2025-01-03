@@ -27,4 +27,5 @@ jobs:
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python update_scheduler.py

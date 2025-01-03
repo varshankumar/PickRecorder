@@ -27,6 +27,7 @@ jobs:
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           echo "MONGO_URI=${MONGO_URI}" >> $GITHUB_ENV
           echo "ODDS_API_KEY=${ODDS_API_KEY}" >> $GITHUB_ENV
@@ -35,4 +36,5 @@ jobs:
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python fetch_moneylines.py
