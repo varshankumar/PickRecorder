@@ -26,37 +26,43 @@
             margin: 0 auto;
         }
         .selectize-dropdown {
-            border-radius: 0.375rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
         .selectize-dropdown-content {
             max-height: 300px;
         }
         .selectize-dropdown-content .option {
-            padding: 8px 12px;
+            color: #fff;
+            padding: 10px 15px;
+            transition: background-color 0.2s ease;
         }
         .selectize-dropdown-content .option:hover {
-            background-color: #e9ecef;
+            background-color: #2d3748;
         }
         .selectize-input {
             padding: 0.75rem;
-            border: 1px solid #ced4da;
-            border-radius: 0.375rem;
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
+            border-radius: 0.25rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         .selectize-input.focus {
-            border-color: #86b7fe;
-            box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 0.2rem rgba(59,130,246,0.25);
         }
-        /* Add this to your existing styles */
         .alpha-badge {
-            font-size: 0.6em;
-            padding: 2px 5px;
-            background-color: #ff4081;
+            font-size: 0.65em;
+            padding: 3px 6px;
+            background-color: #f97316; /* Changed to orange */
             color: white;
-            border-radius: 3px;
+            border-radius: 4px;
             position: relative;
-            top: -10px;
+            top: -8px;
             margin-left: 5px;
+            font-weight: 500;
         }
     </style>
     
@@ -80,10 +86,10 @@
     <!-- Add Chart.js before the closing head tag -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
+<body class="bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-black shadow">
+        <div class="container-fluid px-0">
+            <a class="navbar-brand fw-bold text-blue" href="{{ url_for('index') }}">
                 PickRecorder
                 <span class="alpha-badge">ALPHA</span>
             </a>
@@ -134,7 +140,7 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
+    <div class="container py-4">
         {% block content %}
         {% endblock %}
     </div>

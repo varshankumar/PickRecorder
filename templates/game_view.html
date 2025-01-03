@@ -1,9 +1,9 @@
-<div class="card mb-3">
-    <div class="card-header">
+<div class="card mb-3 bg-dark">
+    <div class="card-header text-light">
         {{ game.event_date|format_datetime(timezone) }} - {{ game.status }}
     </div>
     <div class="card-body">
-        <table class="table table-bordered mb-0">
+        <table class="table table-bordered table-dark mb-0">
             <thead>
                 <tr>
                     <th>Team</th>
@@ -15,10 +15,10 @@
                 </tr>
             </thead>
             <tbody>
-                <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.away_team %}table-success{% elif game.winner != 'N/A' %}table-danger{% endif %}{% endif %}">
+                <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.away_team %}table-primary{% elif game.winner != 'N/A' %}table-danger{% endif %}{% endif %}">
                     <td>
                         <div class="d-flex flex-wrap align-items-center">
-                            <a href="{{ url_for('team_stats', team=game.away_team) }}" class="text-decoration-none">
+                            <a href="{{ url_for('team_stats', team=game.away_team) }}" class="text-light text-decoration-none">
                                 {{ game.away_team }}
                             </a>
                             {% set favored_games = game.away_team_stats.total_completed_favored_games %}
@@ -57,10 +57,10 @@
                     {% endif %}
                     <td>{% if game.status == 'Completed' %}{% if game.winner == game.away_team %}Win{% elif game.winner != 'N/A' %}Loss{% endif %}{% endif %}</td>
                 </tr>
-                <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.home_team %}table-success{% elif game.winner != 'N/A' %}table-danger{% endif %}{% endif %}">
+                <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.home_team %}table-primary{% elif game.winner != 'N/A' %}table-danger{% endif %}{% endif %}">
                     <td>
                         <div class="d-flex flex-wrap align-items-center">
-                            <a href="{{ url_for('team_stats', team=game.home_team) }}" class="text-decoration-none">
+                            <a href="{{ url_for('team_stats', team=game.home_team) }}" class="text-light text-decoration-none">
                                 {{ game.home_team }}
                             </a>
                             {% set favored_games = game.home_team_stats.total_completed_favored_games %}
