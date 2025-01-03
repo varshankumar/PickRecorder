@@ -79,6 +79,28 @@
         {% endif %}
 
         <script>
+            // Common chart options
+            const chartOptions = {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#e5e7eb',
+                            font: {
+                                size: 14
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Common colors
+            const colors = {
+                win: 'rgba(34, 197, 94, 0.9)',  // Green
+                loss: 'rgba(220, 38, 38, 0.9)'  // Red
+            };
+
             // Favored games chart
             new Chart(document.getElementById('favoredChart'), {
                 type: 'doughnut',
@@ -89,17 +111,10 @@
                             {{ favored_wins }},
                             {{ total_completed_favored_games - favored_wins }}
                         ],
-                        backgroundColor: ['#198754', '#dc3545']
+                        backgroundColor: [colors.win, colors.loss]
                     }]
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
+                options: chartOptions
             });
 
             // Underdog games chart
@@ -112,17 +127,10 @@
                             {{ underdog_wins }},
                             {{ total_completed_underdog_games - underdog_wins }}
                         ],
-                        backgroundColor: ['#198754', '#dc3545']
+                        backgroundColor: [colors.win, colors.loss]
                     }]
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
+                options: chartOptions
             });
         </script>
 

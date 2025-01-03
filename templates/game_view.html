@@ -1,6 +1,9 @@
 <div class="card mb-3 bg-dark">
     <div class="card-header text-light">
-        {{ game.event_date|format_datetime(timezone) }} - {{ game.status }}
+        <span class="local-time" data-utc="{{ game.event_date|format_datetime(timezone) }}">
+            {{ game.event_date|format_datetime(timezone) }}
+        </span>
+        - {{ game.status }}
     </div>
     <div class="card-body">
         <table class="table table-bordered table-dark mb-0">
@@ -103,3 +106,12 @@
         </table>
     </div>
 </div>
+
+<script>
+    // Convert UTC times to local time
+    document.querySelectorAll('.local-time').forEach(element => {
+        const utcTime = element.getAttribute('data-utc');
+        const localTime = moment.utc(utcTime).local().format('MM/DD/YYYY hh:mm A');
+        element.textContent = localTime;
+    });
+</script>

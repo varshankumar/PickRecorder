@@ -66,22 +66,44 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Update table state colors for dark theme */
 .table-primary {
-    background-color: rgba(59, 130, 246, 0.2) !important;
-    color: #e5e7eb !important;
-}
-
-.table-danger {
-    background-color: rgba(220, 38, 38, 0.2) !important;
+    background-color: rgba(22, 163, 74, 0.4) !important;  /* Darker green for wins */
     color: #e5e7eb !important;
 }
 
 .table-success {
-    background-color: rgba(59, 130, 246, 0.2) !important;
+    background-color: rgba(34, 197, 94, 0.2) !important;
+    color: #e5e7eb !important;
+}
+
+.table-danger {
+    background-color: rgba(185, 28, 28, 0.4) !important;  /* Darker red for losses */
     color: #e5e7eb !important;
 }
 
 .table-info {
     background-color: rgba(59, 130, 246, 0.1) !important;
+    color: #e5e7eb !important;
+}
+
+/* Override any Bootstrap default backgrounds that might interfere */
+.table-dark .table-primary {
+    background-color: rgba(22, 163, 74, 0.4) !important;
+}
+
+.table-dark .table-danger {
+    background-color: rgba(185, 28, 28, 0.4) !important;
+}
+
+/* Ensure text is always visible */
+.table-primary td,
+.table-danger td,
+.table-dark td {
+    color: #e5e7eb !important;
+}
+
+/* Ensure text visibility in tables */
+.table td,
+.table th {
     color: #e5e7eb !important;
 }
 
@@ -195,6 +217,11 @@ h1, h2, h3, h4, h5, h6 {
 .card-header {
     background-color: #2d3748;
     border-bottom: 1px solid #374151;
+}
+
+/* Ensure chart text is visible */
+.card-title, .card-text {
+    color: #e5e7eb !important;
 }
 
 /* Add text color utilities */
