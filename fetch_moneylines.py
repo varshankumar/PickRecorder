@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import pymongo
 import requests
@@ -45,53 +45,74 @@ except pymongo.errors.ConnectionError as ce:
 def fetch_moneyline_odds(sport_key):
     """
     Fetches moneyline odds for a specific sport from The Odds API.
-
-    :param sport_key: Sport identifier as per The Odds API (e.g., 'basketball_nba')
-    :return: List of events with odds data
+    Now includes all available future games.
     """
     url = f"{API_BASE_URL}{sport_key}/odds"
     params = {
         'apiKey': ODDS_API_KEY,
-        'regions': REGION,          # e.g., 'us'
-        'markets': MARKET,          # e.g., 'h2h' for moneyline
-        'oddsFormat': ODDS_FORMAT,  # 'american' or 'decimal'
-        'dateFormat': DATE_FORMAT   # 'iso' or 'unix'
+        'regions': REGION,
+        'markets': MARKET,
+        'oddsFormat': ODDS_FORMAT,
+        'dateFormat': DATE_FORMAT,
+        'eventIds': None  # This tells the API to return all available events
     }
 
     try:
+        logger.info(f"Fetching odds for {SPORTS.get(sport_key)} including future games")
         response = requests.get(url, params=params)
         response.raise_for_status()
         odds_data = response.json()
-        logger.info(f"Fetched odds data for sport: {SPORTS.get(sport_key, 'Unknown Sport')}")
+        
+        # Log the number of games fetched
+        logger.info(f"Fetched {len(odds_data)} games for {SPORTS.get(sport_key, 'Unknown Sport')}")
+        
+        # Sort games by commence time
+        odds_data.sort(key=lambda x: x.get('commence_time', ''))
+        
         return odds_data
     except requests.exceptions.HTTPError as http_err:
+        if response.status_code == 429:  # Rate limit exceeded
+            logger.error("Rate limit exceeded. Waiting before retrying...")
+            time.sleep(60)  # Wait for 60 seconds before next request
+            return []
         logger.error(f"HTTP error occurred: {http_err} - Status Code: {response.status_code}")
-    except requests.exceptions.RequestException as req_err:
-        logger.error(f"Request exception occurred: {req_err}")
-    except json.JSONDecodeError as json_err:
-        logger.error(f"JSON decode error: {json_err}")
+    except Exception as e:
+        logger.error(f"Error fetching odds: {e}")
     return []
 
 # --------------------- Processing and Storing Data ---------------------
 def process_and_store_odds(odds_data, sport_key):
     """
     Processes odds data and stores it in MongoDB.
-
-    :param odds_data: List of events with odds data
-    :param sport_key: Sport identifier
+    Modified to handle future games better.
     """
     operations = []
+    current_time = datetime.now(timezone.utc)
 
     for event in odds_data:
         try:
+            # Basic validation
             game_id = event.get('id')
-            commence_time_str = event.get('commence_time')  # ISO 8601 format
-            commence_time = datetime.strptime(commence_time_str, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+            commence_time_str = event.get('commence_time')
+            
+            if not all([game_id, commence_time_str]):
+                continue
+                
+            # Parse the commence time
+            commence_time = datetime.strptime(
+                commence_time_str, 
+                '%Y-%m-%dT%H:%M:%SZ'
+            ).replace(tzinfo=timezone.utc)
+            
+            # Skip games that are more than 24 hours in the past
+            if commence_time < current_time - timedelta(hours=24):
+                continue
+
             home_team = event.get('home_team')
             away_team = event.get('away_team')
             bookmakers = event.get('bookmakers', [])
 
-            if not all([game_id, commence_time, home_team, away_team, bookmakers]):
+            if not all([home_team, away_team, bookmakers]):
                 logger.warning(f"Incomplete data for event ID {game_id}. Skipping.")
                 continue
 
@@ -117,7 +138,7 @@ def process_and_store_odds(odds_data, sport_key):
                 logger.warning(f"Missing moneyline odds for event ID {game_id}. Skipping.")
                 continue
 
-            # Prepare the document
+            # Prepare the document with status field
             moneyline_doc = {
                 'game_id': game_id,
                 'sport': SPORTS[sport_key],
@@ -133,38 +154,36 @@ def process_and_store_odds(odds_data, sport_key):
                         'moneyline': away_moneyline
                     }
                 },
+                'status': 'Scheduled' if commence_time > current_time else 'In Progress',
                 'result': {
                     'home_score': None,  # To be updated after the game
                     'away_score': None,  # To be updated after the game
                     'winner': None        # Can be null if game hasn't been played yet
                 },
-                'last_updated': datetime.now(timezone.utc)
-            }
-
-            # Define the unique filter to upsert
-            filter_doc = {
-                'game_id': game_id
+                'last_updated': current_time
             }
 
             # Create an upsert operation
             operations.append(
-                pymongo.UpdateOne(filter_doc, {'$set': moneyline_doc}, upsert=True)
+                pymongo.UpdateOne(
+                    {'game_id': game_id},
+                    {'$set': moneyline_doc},
+                    upsert=True
+                )
             )
 
         except Exception as e:
-            logger.error(f"Error processing event ID {event.get('id', 'Unknown')}: {e}")
+            logger.error(f"Error processing event {event.get('id', 'Unknown')}: {e}")
             continue
 
+    # Execute bulk operations if any
     if operations:
         try:
             result = moneylines_collection.bulk_write(operations)
-            logger.info(f"Inserted/Updated {result.upserted_count + result.modified_count} documents.")
-        except pymongo.errors.BulkWriteError as bwe:
-            logger.error(f"Bulk write error: {bwe.details}")
+            logger.info(f"Processed {len(operations)} games for {SPORTS[sport_key]}")
+            logger.info(f"Updated: {result.modified_count}, Inserted: {result.upserted_count}")
         except Exception as e:
-            logger.error(f"Unexpected error during MongoDB operations: {e}")
-    else:
-        logger.info("No moneyline data to update.")
+            logger.error(f"Bulk write error: {e}")
 
 def get_league_name(sport_key):
     """

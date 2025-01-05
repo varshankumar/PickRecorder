@@ -255,49 +255,56 @@ def fetch_games(target_date, timezone=None, page=1, per_page=10, sports=None):
     try:
         timezone = timezone or session.get('timezone', 'UTC')
         user_timezone = pytz.timezone(timezone)
+        utc = pytz.UTC
         
         # Make sure target_date is timezone aware in user's timezone
         if target_date.tzinfo is None:
             target_date = user_timezone.localize(target_date)
-        else:
-            target_date = target_date.astimezone(user_timezone)
         
         # Get start and end of day in user's timezone
         start_of_day = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
         end_of_day = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
         
         # Convert to UTC for MongoDB query
-        start_of_day_utc = start_of_day.astimezone(pytz.UTC)
-        end_of_day_utc = end_of_day.astimezone(pytz.UTC)
+        start_of_day_utc = start_of_day.astimezone(utc)
+        end_of_day_utc = end_of_day.astimezone(utc)
         
-        # Build base query with date range
-        query = {"event_date": {"$gte": start_of_day_utc, "$lt": end_of_day_utc}}
-        
-        # Debug: Check what sports are actually in the database
-        distinct_sports = moneylines_collection.distinct('sport')
-        logger.info(f"Available sports in database: {distinct_sports}")
-        
-        # Add sport filter if specified (using config SPORTS mapping)
+        # Build query with strict date range
+        base_query = {
+            "event_date": {
+                "$gte": start_of_day_utc,
+                "$lte": end_of_day_utc
+            }
+        }
+
+        # Add sport filter if specified
         if sports and isinstance(sports, list):
-            # Use the values from SPORTS mapping directly
-            mapped_sports = [sport for sport in sports if sport in SPORTS.values()]
-            if mapped_sports:
-                query['sport'] = {'$in': mapped_sports}
-        
-        # Log the query and sample document
-        logger.info(f"MongoDB Query: {query}")
-        sample_game = moneylines_collection.find_one()
-        logger.info(f"Sample game document: {sample_game}")
-        
+            query = {
+                "$and": [
+                    base_query,
+                    {"sport": {"$in": sports}}
+                ]
+            }
+        else:
+            query = base_query
+
+        # Debug logging
+        logger.info(f"Query date range: {start_of_day_utc} to {end_of_day_utc}")
+        logger.info(f"Target date: {target_date}")
+        logger.info(f"Timezone: {timezone}")
+        logger.info(f"Sports filter: {sports}")
+        logger.info(f"Final query: {query}")
+
+        # Execute query
         total_games = moneylines_collection.count_documents(query)
         logger.info(f"Found {total_games} games matching query")
         
-        if total_games == 0:
-            return [], 0
-
-        skip = (page - 1) * per_page
-        games_cursor = moneylines_collection.find(query).skip(skip).limit(per_page)
-
+        # Use proper sorting and pagination
+        games_cursor = (moneylines_collection.find(query)
+                       .sort('event_date', 1)
+                       .skip((page - 1) * per_page)
+                       .limit(per_page))
+        
         games = []
         for game in games_cursor:
             event_date_utc = game.get('event_date')
@@ -485,20 +492,23 @@ def tomorrow():
     try:
         timezone = session.get('timezone', 'UTC')
         user_tz = pytz.timezone(timezone)
+        
+        # Calculate tomorrow's date at midnight in user's timezone
         now = datetime.now(user_tz)
-        next_day_date = now + timedelta(days=1)
+        next_day_date = (now + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        
+        # Debug logging
+        logger.info(f"Fetching games for date: {next_day_date}")
+        logger.info(f"User timezone: {timezone}")
         
         page = int(request.args.get('page', 1))
-        # Changed to default to NBA only if no sport is selected
-        selected_sports = request.args.getlist('sports')
-        if not selected_sports:
-            selected_sports = ['NBA']
-            
-        # Validate selected sports against config SPORTS values
-        selected_sports = [sport for sport in selected_sports if sport in SPORTS.values()]
-        if not selected_sports:
-            selected_sports = ['NBA']
-            
+        selected_sports = request.args.getlist('sports') or ['NBA']
+        
+        # Debug log
+        logger.info(f"Selected sports: {selected_sports}")
+        
         games_next_day, total_games = fetch_games(
             target_date=next_day_date,
             timezone=timezone,
@@ -506,6 +516,11 @@ def tomorrow():
             per_page=10,
             sports=selected_sports
         )
+        
+        # Log results
+        logger.info(f"Found {total_games} games for tomorrow")
+        logger.info(f"Returning {len(games_next_day)} games for current page")
+        
         total_pages = (total_games + 10 - 1) // 10
 
         return render_template('tomorrow.html',
