@@ -251,7 +251,7 @@ def calculate_win_stats(team, up_to_date=None):
             'total_favored_games': 0
         }
 
-def fetch_games(target_date, timezone=None, page=1, per_page=10, sports=None):
+def fetch_games(target_date, timezone=None, sports=None):
     try:
         timezone = timezone or session.get('timezone', 'UTC')
         user_timezone = pytz.timezone(timezone)
@@ -300,10 +300,7 @@ def fetch_games(target_date, timezone=None, page=1, per_page=10, sports=None):
         logger.info(f"Found {total_games} games matching query")
         
         # Use proper sorting and pagination
-        games_cursor = (moneylines_collection.find(query)
-                       .sort('event_date', 1)
-                       .skip((page - 1) * per_page)
-                       .limit(per_page))
+        games_cursor = moneylines_collection.find(query).sort('event_date', 1)
         
         games = []
         for game in games_cursor:
@@ -346,12 +343,12 @@ def fetch_games(target_date, timezone=None, page=1, per_page=10, sports=None):
             })
 
         games = sorted(games, key=lambda x: x['event_date'])
-        return games, total_games
+        return games, len(games)
     except Exception as e:
         logger.error(f"Error in fetch_games function: {e}")
         return [], 0
 
-def fetch_team_games(team, page=1, per_page=20):
+def fetch_team_games(team):
     try:
         # Get user's timezone
         timezone = session.get('timezone', 'UTC')
@@ -369,9 +366,8 @@ def fetch_team_games(team, page=1, per_page=20):
         if total_games == 0:
             return [], 0
 
-        skip = (page - 1) * per_page
         # Add sort parameter to find() call
-        games_cursor = moneylines_collection.find(query).sort('event_date', -1).skip(skip).limit(per_page)
+        games_cursor = moneylines_collection.find(query).sort('event_date', -1)
 
         # Process games
         games = []
@@ -409,7 +405,7 @@ def fetch_team_games(team, page=1, per_page=20):
                 'away_team_stats': away_team_stats
             })
 
-        return games, total_games
+        return games, len(games)
         
     except Exception as e:
         logger.error(f"Error in fetch_team_games function: {e}")
@@ -455,7 +451,6 @@ def index():
         user_tz = pytz.timezone(timezone)
         now_user_tz = datetime.now(user_tz)
         
-        page = int(request.args.get('page', 1))
         # Change this line to only default to NBA if no sports are explicitly selected
         selected_sports = request.args.getlist('sports')
         if not selected_sports:  # If no sports are selected in the URL
@@ -466,20 +461,15 @@ def index():
         if not selected_sports:
             selected_sports = ['NBA']
             
-        games_today, total_games = fetch_games(
+        games_today, _ = fetch_games(
             target_date=now_user_tz, 
-            timezone=timezone, 
-            page=page, 
-            per_page=10,
+            timezone=timezone,
             sports=selected_sports
         )
-        total_pages = (total_games + 10 - 1) // 10
 
         return render_template('today.html', 
                             games=games_today, 
                             page_title="Today's Games",
-                            current_page=page, 
-                            total_pages=total_pages, 
                             timezone=timezone,
                             selected_sports=selected_sports)
     except Exception as e:
@@ -503,31 +493,24 @@ def tomorrow():
         logger.info(f"Fetching games for date: {next_day_date}")
         logger.info(f"User timezone: {timezone}")
         
-        page = int(request.args.get('page', 1))
         selected_sports = request.args.getlist('sports') or ['NBA']
         
         # Debug log
         logger.info(f"Selected sports: {selected_sports}")
         
-        games_next_day, total_games = fetch_games(
+        games_next_day, _ = fetch_games(
             target_date=next_day_date,
             timezone=timezone,
-            page=page,
-            per_page=10,
             sports=selected_sports
         )
         
         # Log results
-        logger.info(f"Found {total_games} games for tomorrow")
-        logger.info(f"Returning {len(games_next_day)} games for current page")
-        
-        total_pages = (total_games + 10 - 1) // 10
+        logger.info(f"Found games for tomorrow")
+        logger.info(f"Returning games for current page")
 
         return render_template('tomorrow.html',
                             games=games_next_day, 
                             page_title="Tomorrow's Games",
-                            current_page=page, 
-                            total_pages=total_pages, 
                             timezone=timezone,
                             selected_sports=selected_sports)
     except Exception as e:
@@ -543,7 +526,6 @@ def yesterday():  # Changed from 'previous_games' to 'yesterday'
         now = datetime.now(user_tz)
         previous_day_date = now - timedelta(days=1)
         
-        page = int(request.args.get('page', 1))
         # Change to match today/tomorrow default behavior
         selected_sports = request.args.getlist('sports')
         if not selected_sports:  # If no sports are selected in the URL
@@ -554,20 +536,15 @@ def yesterday():  # Changed from 'previous_games' to 'yesterday'
         if not selected_sports:
             selected_sports = ['NBA']
         
-        games_previous_day, total_games = fetch_games(
+        games_previous_day, _ = fetch_games(
             target_date=previous_day_date,
             timezone=timezone,
-            page=page,
-            per_page=10,
             sports=selected_sports
         )
-        total_pages = (total_games + 10 - 1) // 10
 
         return render_template('yesterday.html',  # Changed from 'previous_games.html' to 'yesterday.html'
                             games=games_previous_day, 
                             page_title="Yesterday's Games",
-                            current_page=page, 
-                            total_pages=total_pages, 
                             timezone=timezone,
                             selected_sports=selected_sports)
     except Exception as e:
@@ -585,17 +562,12 @@ def team_stats():
             team = request.form.get('team')
             if not team:
                 return render_template('team_stats.html', error="Please select a team.", teams=get_unique_teams())
-            return redirect(url_for('team_stats', team=team, page=1))
+            return redirect(url_for('team_stats', team=team))
 
         team = request.args.get('team')
-        page = int(request.args.get('page', 1))
-        per_page = 10
 
         # Fetch games for the selected team
-        games, total_games = fetch_team_games(team, page=page, per_page=per_page) if team else ([], 0)
-
-        # Calculate total pages for pagination
-        total_pages = (total_games + per_page - 1) // per_page
+        games, _ = fetch_team_games(team) if team else ([], 0)
 
         if team:
             # Calculate win statistics
@@ -607,8 +579,6 @@ def team_stats():
                 selected_team=team,
                 teams=get_unique_teams(),
                 page_title=f"Stats for {team}",
-                current_page=page,
-                total_pages=total_pages,
                 timezone=timezone,
                 **win_stats  # Unpack the win_stats dictionary
             )

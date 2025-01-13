@@ -8,7 +8,6 @@ A web application for tracking sports betting odds and results across NBA and NF
 - Real-time odds tracking for sports games
 - Automatic timezone detection for accurate game times
 - View today's games, upcoming games, and past results
-- Pagination support for browsing large game sets
 
 ### Team Statistics
 - Detailed team performance analysis
