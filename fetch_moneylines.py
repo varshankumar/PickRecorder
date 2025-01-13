@@ -55,6 +55,7 @@ def fetch_moneyline_odds(sport_key):
         'markets': MARKET,
         'oddsFormat': ODDS_FORMAT,
         'dateFormat': DATE_FORMAT,
+        'bookmakers': 'fliff',  # Add a major bookmaker for consistency
         'eventIds': None  # This tells the API to return all available events
     }
 
@@ -63,23 +64,15 @@ def fetch_moneyline_odds(sport_key):
         response = requests.get(url, params=params)
         response.raise_for_status()
         odds_data = response.json()
-        
-        # Log the number of games fetched
-        logger.info(f"Fetched {len(odds_data)} games for {SPORTS.get(sport_key, 'Unknown Sport')}")
-        
-        # Sort games by commence time
-        odds_data.sort(key=lambda x: x.get('commence_time', ''))
+
+        # Log the games being fetched
+        for game in odds_data:
+            logger.info(f"Fetched game: {game.get('sport_title')} - {game.get('commence_time')} - {game.get('home_team')} vs {game.get('away_team')}")
         
         return odds_data
-    except requests.exceptions.HTTPError as http_err:
-        if response.status_code == 429:  # Rate limit exceeded
-            logger.error("Rate limit exceeded. Waiting before retrying...")
-            time.sleep(60)  # Wait for 60 seconds before next request
-            return []
-        logger.error(f"HTTP error occurred: {http_err} - Status Code: {response.status_code}")
     except Exception as e:
         logger.error(f"Error fetching odds: {e}")
-    return []
+        return []
 
 # --------------------- Processing and Storing Data ---------------------
 def process_and_store_odds(odds_data, sport_key):
@@ -172,6 +165,8 @@ def process_and_store_odds(odds_data, sport_key):
                     upsert=True
                 )
             )
+
+            logger.info(f"Processed game: {home_team} vs {away_team} on {commence_time}")
 
         except Exception as e:
             logger.error(f"Error processing event {event.get('id', 'Unknown')}: {e}")

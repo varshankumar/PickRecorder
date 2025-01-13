@@ -20,8 +20,6 @@ PST_TZ = pytz.timezone('America/Los_Angeles')
 # Update Constants
 PST_TZ = pytz.timezone('America/Los_Angeles')
 UPDATE_TIMES = [
-    (13, 0),  # 1 PM
-    (20, 0),  # 8 PM
     (0, 0)    # 12 AM (midnight)
 ]
 
