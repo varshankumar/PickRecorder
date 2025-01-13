@@ -18,7 +18,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.away_team %}table-primary{% elif game.winner != 'N/A' %}table-danger{% endif %}{% endif %}">
+                <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.away_team %}table-success{% elif game.winner != 'N/A' %}table-danger{% endif %}{% endif %}">
                     <td>
                         <div class="d-flex flex-wrap align-items-center">
                             <a href="{{ url_for('team_stats', team=game.away_team) }}" class="text-light text-decoration-none">
@@ -60,7 +60,7 @@
                     {% endif %}
                     <td>{% if game.status == 'Completed' %}{% if game.winner == game.away_team %}Win{% elif game.winner != 'N/A' %}Loss{% endif %}{% endif %}</td>
                 </tr>
-                <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.home_team %}table-primary{% elif game.winner != 'N/A' %}table-danger{% endif %}{% endif %}">
+                <tr class="{% if game.status == 'Completed' %}{% if game.winner == game.home_team %}table-success{% elif game.winner != 'N/A' %}table-danger{% endif %}{% endif %}">
                     <td>
                         <div class="d-flex flex-wrap align-items-center">
                             <a href="{{ url_for('team_stats', team=game.home_team) }}" class="text-light text-decoration-none">

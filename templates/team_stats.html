@@ -6,17 +6,16 @@
     <div class="text-center mb-4">
         <h1 class="display-4">{{ page_title }}</h1>
         
-        <form method="POST" class="mb-4">
+        <form method="POST" class="mb-4 team-stats-form">
             <div class="form-group position-relative">
                 <input type="text" 
                        name="team" 
                        id="team" 
-                       class="form-control" 
+                       class="form-control search-input" 
                        placeholder="Type to search teams..."
                        autocomplete="off"
-                       value="{% if selected_team and selected_team != 'None' %}{{ selected_team }}{% endif %}"
-                       style="max-width: 400px; margin: 0 auto;">
-                <div id="suggestions" class="custom-dropdown" style="display: none;"></div>
+                       value="{% if selected_team and selected_team != 'None' %}{{ selected_team }}{% endif %}">
+                <div id="suggestions" class="custom-dropdown"></div>
             </div>
             <button type="submit" class="btn btn-primary mt-2">View Stats</button>
         </form>
@@ -29,7 +28,7 @@
                     <div class="card-body">
                         <h5 class="card-title">As Favorite</h5>
                         <div class="d-flex justify-content-center">
-                            <div style="width: 200px; height: 200px;">
+                            <div class="chart-container">
                                 <canvas id="favoredChart"></canvas>
                             </div>
                         </div>
@@ -45,7 +44,7 @@
                     <div class="card-body">
                         <h5 class="card-title">As Underdog</h5>
                         <div class="d-flex justify-content-center">
-                            <div style="width: 200px; height: 200px;">
+                            <div class="chart-container">
                                 <canvas id="underdogChart"></canvas>
                             </div>
                         </div>

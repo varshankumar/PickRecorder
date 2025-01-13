@@ -6,67 +6,22 @@
     <!-- Single favicon -->
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <title>{% block title %}PickRecorder{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     
-    <!-- Moment.js Core + Timezone Support -->
-    <!-- Core Moment.js is required first -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <!-- Timezone plugin that adds timezone support to Moment.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.33/moment-timezone-with-data.min.js"></script>
+    <!-- Load Bootstrap CSS first -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <!-- Selectize.js dependencies -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.13.3/css/selectize.bootstrap4.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.13.3/js/standalone/selectize.min.js"></script>
     
-    <style>
-        /* Custom Selectize Styling */
-        .selectize-control {
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        .selectize-dropdown {
-            background-color: #1a1a1a;
-            border: 1px solid #333;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-        .selectize-dropdown-content {
-            max-height: 300px;
-        }
-        .selectize-dropdown-content .option {
-            color: #fff;
-            padding: 10px 15px;
-            transition: background-color 0.2s ease;
-        }
-        .selectize-dropdown-content .option:hover {
-            background-color: #2d3748;
-        }
-        .selectize-input {
-            padding: 0.75rem;
-            background-color: #1a1a1a;
-            border: 1px solid #333;
-            color: #fff;
-            border-radius: 0.25rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .selectize-input.focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 0.2rem rgba(59,130,246,0.25);
-        }
-        .alpha-badge {
-            font-size: 0.65em;
-            padding: 3px 6px;
-            background-color: #f97316; /* Changed to orange */
-            color: white;
-            border-radius: 4px;
-            position: relative;
-            top: -8px;
-            margin-left: 5px;
-            font-weight: 500;
-        }
-    </style>
+    <!-- Load our custom CSS last to ensure it overrides Bootstrap -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    
+    <!-- Moment.js and other scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.33/moment-timezone-with-data.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     
     <script>
         // Set timezone on page load
@@ -96,8 +51,6 @@
         updateClock();
         setInterval(updateClock, 1000);
     </script>
-    <!-- Add Chart.js before the closing head tag -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-dark">
     <nav class="navbar navbar-expand-lg navbar-dark bg-black shadow">
