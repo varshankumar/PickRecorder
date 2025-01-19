@@ -48,7 +48,7 @@ def fetch_scores(sport='basketball_nba'):
     url = f"{API_BASE_URL}{sport}/scores/"
     params = {
         'apiKey': ODDS_API_KEY,
-        'daysFrom': 3,
+        'daysFrom': 30,
         'dateFormat': DATE_FORMAT
     }
 

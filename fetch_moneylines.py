@@ -55,7 +55,7 @@ def fetch_moneyline_odds(sport_key):
         'markets': MARKET,
         'oddsFormat': ODDS_FORMAT,
         'dateFormat': DATE_FORMAT,
-        'bookmakers': 'fliff',  # Add a major bookmaker for consistency
+        'bookmakers': 'draftkings',  # Add a major bookmaker for consistency
         'eventIds': None  # This tells the API to return all available events
     }
 
@@ -64,6 +64,9 @@ def fetch_moneyline_odds(sport_key):
         response = requests.get(url, params=params)
         response.raise_for_status()
         odds_data = response.json()
+
+        # Log the full API response
+        logger.info(f"Full API response for {sport_key}: {odds_data}")
 
         # Log the games being fetched
         for game in odds_data:
@@ -98,16 +101,12 @@ def process_and_store_odds(odds_data, sport_key):
                 '%Y-%m-%dT%H:%M:%SZ'
             ).replace(tzinfo=timezone.utc)
             
-            # Skip games that are more than 24 hours in the past
-            if commence_time < current_time - timedelta(hours=24):
-                continue
-
             home_team = event.get('home_team')
             away_team = event.get('away_team')
             bookmakers = event.get('bookmakers', [])
 
             if not all([home_team, away_team, bookmakers]):
-                logger.warning(f"Incomplete data for event ID {game_id}. Skipping.")
+                logger.warning(f"Incomplete data for event ID {game_id}. Skipping. Full event data: {event}")
                 continue
 
             # Initialize moneyline variables
